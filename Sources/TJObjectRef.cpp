@@ -1,0 +1,113 @@
+#include "../TJPch.h"
+#include "../Include/TJObjectRef.h"
+#include "../Include/TJUtils.h"
+
+const char* kConstructorName = "<init>";
+
+TJObjectRef::TJObjectRef(const TJClassRef& classRef, jobject sourceObj, bool doCopy, TJRefType refType):
+	TJRef<jobject>(sourceObj, refType, doCopy),
+	mClassRef(new TJClassRef(classRef))
+{
+};
+
+TJObjectRef::TJObjectRef(jobject sourceObj, bool doCopy, TJRefType refType):
+	TJRef<jobject>(sourceObj, refType, doCopy),
+	mClassRef(NULL)
+{
+	JNIEnv* environment = TJGetEnvironment();
+	if (environment == NULL)
+		throw TJNIException(kThreadDetached, "Failed to get jnienv in TJObjectRef::TJObjectRef");
+
+	mClassRef = new TJClassRef(environment->GetObjectClass(sourceObj));
+}
+
+TJObjectRef::TJObjectRef(const TJObjectRef& rht):
+	TJRef<jobject>(rht),
+	mClassRef(new TJClassRef(*rht.mClassRef))
+{
+}
+
+TJObjectRef& TJObjectRef::operator=(const TJObjectRef& rht)
+{
+	if (this != &rht)
+	{
+		TJBaseObject::operator=(rht);
+		mClassRef = new TJClassRef(*rht.mClassRef);
+	}
+
+	return *this;
+}
+
+TJObjectRef::~TJObjectRef()
+{
+	delete mClassRef;
+}
+
+TJObjectRef TJObjectRef::createObjectVarArgs(const char* className, const char* constrSignature, ...)
+{
+	// find corresponded class
+	// check environment
+	JNIEnv* environment = TJGetEnvironment();
+	if (environment == NULL)
+		throw TJNIException(kThreadDetached, "Failed to get jnienv in TJObjectRef::call");
+	
+	// find corresponded class
+	TJClassRef classRef = TJClassRef::FindClass(className, kGlobalRef);
+
+	jmethodID constructorID = environment->GetMethodID(classRef.get(), kConstructorName, constrSignature);
+	if (constructorID == NULL)
+		GenerateJavaException(environment, environment->ExceptionOccurred(), "GetMethodID failed");
+
+	// get local reference to object
+	va_list args;
+	va_start(args, constrSignature);
+	jobject objRef = environment->NewObjectV(classRef.get(), constructorID, args);
+	va_end(args);
+
+	if (objRef == NULL)
+		GenerateJavaException(environment, environment->ExceptionOccurred(), "Failed to call constructor in JObjectRef::createObjectVarArgs");
+
+	// to destroy local reference on exit
+	ScopedLocalRef<jobject> cleaner(objRef);
+
+	return TJObjectRef(classRef, objRef, true, kGlobalRef);
+}
+
+TJObjectRef TJObjectRef::createObject(const std::string& className, const std::string& constrSignature, 
+									const TJValue* values, size_t count, TJRefType refType)
+{
+	// check environment
+	JNIEnv* environment = TJGetEnvironment();
+	if (environment == NULL)
+		throw TJNIException(kThreadDetached, "Failed to get jnienv in TJObjectRef::createObject");
+
+	// check arguments
+	if ((values == NULL) || (count == 0) || (count > sMaxArgsCount))
+		throw TJInvalidArgument("Invalid parameters in TJObjectRef::createObject");
+
+	// create array of jvalue
+	jvalue args[sMaxArgsCount] = {0};
+	for (size_t i = 0; i < count; ++i)
+		args[i] = values[i].handle();
+
+	// find corresponded class
+	TJClassRef classRef = TJClassRef::FindClass(className, kGlobalRef);
+
+	// find corresponed constructor id
+	TJMethodID constructorID = environment->GetMethodID(classRef.get(), kConstructorName, constrSignature.c_str());
+	if (constructorID == NULL)
+		GenerateJavaException(environment, environment->ExceptionOccurred(), "Failed to get constructor id in TJObjectRef::createObject");
+
+	jobject objRefLocal = environment->NewObjectA(classRef.get(), constructorID, args);
+	if (objRefLocal == NULL)
+		GenerateJavaException(environment, environment->ExceptionOccurred(), "Failed to call constructor in TJObjectRef::createObject");
+	
+	if (refType == kLocalRef)
+		return TJObjectRef(classRef, objRefLocal, false, kLocalRef);
+	else
+	{
+		ScopedLocalRef<jobject> cleaner(objRefLocal);
+		TJObjectRef resultRef(classRef, objRefLocal, true, refType);
+		return resultRef;
+	}
+}
