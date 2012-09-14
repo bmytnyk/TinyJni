@@ -48,7 +48,11 @@ public:
 	typedef TJRef<TJJavaArrayType> TJBase;
 
 private:
+	// quantity of elements in array
+	// always > 0
 	size_t												mCount;
+	
+	// cached pointer to array contents (or copy) 
 	mutable T*											mAcquiredDataPtr;
 	
 	TJJavaPrimitiveArray(TJJavaArrayType javaArrayHandle, size_t size, TJRefType refType = kGlobalRef, bool makeCopy = true):
@@ -70,6 +74,7 @@ public:
 		return mCount;
 	}
 
+	// return pointer to entire array itself (ot copy)
 	const T* getPtr() const;
 	T* getPtr();
 
@@ -159,12 +164,43 @@ void TJJavaPrimitiveArray<T>::getRegion(TJSize startIdx, TJSize length, T* resul
 {
 	TJ_ASSERT(resultBuffer != NULL);
 
-	if ((startIdx > count) || (startIdx < 0))
-		throw TJInvalidArgument();
+	if ((startIdx + length > mCount) || (startIdx < 0) || (resultBuffer == NULL) || (length < 0))
+		throw TJInvalidArgument("Invalid argument in TJJavaPrimitiveArray::getRegion");
+
+	JNIEnv* jniEnv = TJGetEnvironment();
+	if (jniEnv == NULL)
+		throw TJNIException(kThreadDetached, "Failed to get jni environment in TJJavaPrimitiveArray::getRegion");
+
+	if (mAcquiredDataPtr != NULL)
+	{
+		memcpy(resultBuffer, mAcquiredDataPtr + startIdx, length * sizeof(T));
+	}
+	else
+	{
+		TJJavaArrayTraits<T>::getRegion(jniEnv, this->mHandle, startIdx, length, resultBuffer);
+	}
 }
-	
+
+template <typename T>
 void TJJavaPrimitiveArray<T>::setRegion(TJSize startIdx, TJSize length, const T* sourceBuffer)
 {
+	TJ_ASSERT(sourceBuffer != NULL);
+
+	if ((startIdx + length > mCount) || (startIdx < 0) || (sourceBuffer == NULL) || (length < 0))
+		throw TJInvalidArgument("Invalid argument in TJJavaPrimitiveArray::setRegion");
+
+	JNIEnv* jniEnv = TJGetEnvironment();
+	if (jniEnv == NULL)
+		throw TJNIException(kThreadDetached, "Failed to get jni environment in TJJavaPrimitiveArray::getRegion");
+
+	if (mAcquiredDataPtr != NULL)
+	{
+		memcpy(mAcquiredDataPtr + startIdx, sourceBuffer, length * sizeof(T));
+	}
+	else
+	{
+		TJJavaArrayTraits<T>::setRegion(jniEnv, this->mHandle, startIdx, length, sourceBuffer);
+	}
 }
 
 typedef TJJavaPrimitiveArray<TJByte> TJJavaByteArray;
@@ -173,6 +209,8 @@ typedef TJJavaPrimitiveArray<TJFloat> TJJavaFloatArray;
 typedef TJJavaPrimitiveArray<TJDouble> TJJavaDoubleArray;
 typedef TJJavaPrimitiveArray<TJInt> TJJavaIntArray;
 typedef TJJavaPrimitiveArray<TJChar> TJJavaCharArray;
+typedef TJJavaPrimitiveArray<TJLong> TJJavaLongArray;
+typedef TJJavaPrimitiveArray<TJBoolean> TJJavaBooleanArray;
 
 template class TJJavaPrimitiveArray<TJShort>;
 

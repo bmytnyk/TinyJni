@@ -53,6 +53,41 @@ TJStringIndexOutOfBoundsException::TJStringIndexOutOfBoundsException(const std::
 {
 }
 
+static bool GetJavaExceptionInfo(JNIEnv* jniEnv, jthrowable javaExceptionObject, std::string& exceptionClassName, std::string& fullExceptionInfo)
+{
+	TJ_ASSERT (jniEnv != NULL);
+	TJ_ASSERT (javaExceptionObject != NULL);
+
+	exceptionClassName.clear();
+	fullExceptionInfo.clear();
+
+	jclass javaExceptionClass = jniEnv->GetObjectClass(javaExceptionObject);
+	if (javaExceptionClass == NULL)
+		return false;
+
+	// get java class name
+	TJMethodID toStringId = jniEnv->GetMethodID(javaExceptionClass, "toString", "()Ljava/lang/String;");
+	if (toStringId == NULL)
+		return false;
+
+	jstring javaExceptionName = static_cast<jstring>(jniEnv->CallObjectMethod(javaExceptionClass, toStringId));
+		
+	jboolean dumbIsCopy = JNI_FALSE;
+	const char* rawChars = jniEnv->GetStringUTFChars(javaExceptionName, &dumbIsCopy);
+	TJSize rawLength= jniEnv->GetStringUTFLength(javaExceptionName);
+	
+	exceptionClassName.assign(rawChars, rawLength);
+
+	jstring javaExcString = static_cast<jstring>(jniEnv->CallObjectMethod(javaExceptionObject, toStringId));
+	if (javaExcString == NULL)
+		return false;
+
+	rawChars = jniEnv->GetStringUTFChars(javaExcString, &dumbIsCopy);
+	rawLength = jniEnv->GetStringUTFLength(javaExcString);
+	fullExceptionInfo.assign(rawChars, rawLength);
+	
+	return true;
+}
 
 void GenerateJavaException(JNIEnv* jniEnv, jthrowable javaExceptionObject, const std::string& place)
 {
@@ -61,64 +96,28 @@ void GenerateJavaException(JNIEnv* jniEnv, jthrowable javaExceptionObject, const
 
 	std::string exceptionClass("");
 	std::string fullExceptionInfo("");
-	bool succeeded = false;
-
-	// to avoid warnings
-	bool alwaysFalse = false;
-	do
-	{
-		jclass javaExceptionClass = jniEnv->GetObjectClass(javaExceptionObject);
-
-		if (javaExceptionClass == NULL)
-			break;
-
-		// get java class name
-		TJMethodID toStringId = jniEnv->GetMethodID(javaExceptionClass, "toString", "()Ljava/lang/String;");
-		if (toStringId == NULL)
-			break;
-
-		jstring javaExceptionName = static_cast<jstring>(jniEnv->CallObjectMethod(javaExceptionClass, toStringId));
-		
-		jboolean dumbIsCopy = JNI_FALSE;
-		const char* rawChars = jniEnv->GetStringUTFChars(javaExceptionName, &dumbIsCopy);
-		TJSize rawLength= jniEnv->GetStringUTFLength(javaExceptionName);
-		exceptionClass.assign(rawChars, rawLength);
-
-		jstring javaExcString = static_cast<jstring>(jniEnv->CallObjectMethod(javaExceptionObject, toStringId));
-		if (javaExcString == NULL)
-			break;
-
-		rawChars = jniEnv->GetStringUTFChars(javaExcString, &dumbIsCopy);
-		rawLength = jniEnv->GetStringUTFLength(javaExcString);
-		fullExceptionInfo.assign(rawChars, rawLength);
-	
-		succeeded = true;
-	}
-	while (alwaysFalse);
+	bool infoGot = GetJavaExceptionInfo(jniEnv, javaExceptionObject, exceptionClass, fullExceptionInfo);
+	if (!infoGot)
+		throw TJBaseException("Unknown java exception occured");
 
 	// clear exception
 	jniEnv->ExceptionClear();
 
-	if (succeeded)
-	{
-		std::string className;
-		std::string::size_type pos = exceptionClass.rfind(' ');
-		if (pos != std::string::npos)
-			className.assign(exceptionClass.c_str() + pos + 1, exceptionClass.size() - pos - 1);
-		else
-			className = exceptionClass;
-
-		if (className == "java.lang.OutOfMemoryError")
-			throw TJJavaOutOfMemory(fullExceptionInfo, place);
-		else if (className == "java.lang.ArrayIndexOutOfBoundsException")
-			throw TJArrayIndexOutOfBounds(fullExceptionInfo, place);
-		else if (className == "java.lang.InstantiationException")
-			throw TJInstantiationException(fullExceptionInfo, place);
-		else if (className == "java.lang.StringIndexOutOfBoundsException")
-			throw TJStringIndexOutOfBoundsException(fullExceptionInfo, place);
-		else
-			throw TJJavaException(fullExceptionInfo, place);
-	}
+	std::string className;
+	std::string::size_type pos = exceptionClass.rfind(' ');
+	if (pos != std::string::npos)
+		className.assign(exceptionClass.c_str() + pos + 1, exceptionClass.size() - pos - 1);
 	else
-		throw TJBaseException("Unknown java exception occured");
+		className = exceptionClass;
+
+	if (className == "java.lang.OutOfMemoryError")
+		throw TJJavaOutOfMemory(fullExceptionInfo, place);
+	else if (className == "java.lang.ArrayIndexOutOfBoundsException")
+		throw TJArrayIndexOutOfBounds(fullExceptionInfo, place);
+	else if (className == "java.lang.InstantiationException")
+		throw TJInstantiationException(fullExceptionInfo, place);
+	else if (className == "java.lang.StringIndexOutOfBoundsException")
+		throw TJStringIndexOutOfBoundsException(fullExceptionInfo, place);
+	else
+		throw TJJavaException(fullExceptionInfo, place);
 };
