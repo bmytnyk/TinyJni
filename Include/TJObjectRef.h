@@ -1,3 +1,11 @@
+/*
+* Copyright (c) 2012
+* Bogdan Mytnyk <bogdan.myntyk@gmail.com>
+*
+* This library is free software; you can redistribute it and/or modify
+* it under the terms of the MIT license.
+*/
+
 #ifndef __TG_BASEOBJECTREF_H__
 #define __TG_BASEOBJECTREF_H__
 
@@ -5,10 +13,14 @@
 #include "TJClass.h"
 #include "TJValue.h"
 
+//@brief
+//class that represents reference to java object
+//can't contain null reference
+
 class TJObjectRef : public TJRef<jobject>
 {
 private:
-	// global reference to the class of this object
+	//reference to the class of this object
 	TJClassRef* mClassRef;
 
 public:
@@ -38,7 +50,8 @@ public:
 
 	const std::string& descriptor() const {return mClassRef->descriptor();};
 
-	// call methods for objects
+	//@brief:
+	// call non-static methods for this objects (given by  class name)
 
 	template <typename RetType>
 	RetType call(const std::string& methodName, const std::string& signature);
@@ -59,7 +72,8 @@ public:
 	RetType call(const std::string& methodName, const std::string& signature, 
 									const TJValue* args, size_t count);
 
-	// creator methods for objects
+	//@brief:
+	// create object's of the class (given by  class name)
 	static TJObjectRef createObject(const std::string& className, const std::string& constrSignature);
 
 	template <typename ArgType>

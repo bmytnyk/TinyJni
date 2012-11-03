@@ -1,8 +1,18 @@
+/*
+* Copyright (c) 2012
+* Bogdan Mytnyk <bogdan.mytnyk@gmail.com>
+*
+* This library is free software; you can redistribute it and/or modify
+* it under the terms of the MIT license.
+*/
+
 #include "../TJPch.h"
 #include "../Include/TJCommon.h"
 #include "../Include/TJJavaException.h"
 #include "../Include/TJTypes.h"
 #include "../Include/TJObjectRef.h"
+
+#include <sstream>
 
 TJJavaException::TJJavaException(const std::string& description, const std::string& place) throw():
 	TJBaseException(description),
@@ -98,11 +108,17 @@ void GenerateJavaException(JNIEnv* jniEnv, jthrowable javaExceptionObject, const
 	std::string fullExceptionInfo("");
 	bool infoGot = GetJavaExceptionInfo(jniEnv, javaExceptionObject, exceptionClass, fullExceptionInfo);
 	if (!infoGot)
-		throw TJBaseException("Unknown java exception occured");
+	{
+		// we fail to get full info
+		std::stringstream exceptionInfoStream;
+		exceptionInfoStream << "Unknown java exception occured in " << place;
+		throw TJBaseException(exceptionInfoStream.str());
+	}
 
 	// clear exception
 	jniEnv->ExceptionClear();
 
+	// get class name
 	std::string className;
 	std::string::size_type pos = exceptionClass.rfind(' ');
 	if (pos != std::string::npos)
@@ -110,6 +126,7 @@ void GenerateJavaException(JNIEnv* jniEnv, jthrowable javaExceptionObject, const
 	else
 		className = exceptionClass;
 
+	// here we need to do map (TODO!!!)
 	if (className == "java.lang.OutOfMemoryError")
 		throw TJJavaOutOfMemory(fullExceptionInfo, place);
 	else if (className == "java.lang.ArrayIndexOutOfBoundsException")

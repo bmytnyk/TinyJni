@@ -1,3 +1,11 @@
+/*
+* Copyright (c) 2012
+* Bogdan Mytnyk <bogdan.myntyk@gmail.com>
+*
+* This library is free software; you can redistribute it and/or modify
+* it under the terms of the MIT license.
+*/
+
 #ifndef __TJ_JAVAEXCEPTION_H__
 #define __TJ_JAVAEXCEPTION_H__
 
@@ -6,6 +14,11 @@
 
 #include "TJException.h"
 #include "TJTypes.h"
+
+// @brief
+// class that is base for all of exceptions
+// which are generated as result of throwing specific java exception
+// during java code execution
 
 class TJJavaException : public TJBaseException
 {
@@ -21,7 +34,8 @@ public:
 	virtual ~TJJavaException() throw() {};
 
 private:
-	std::string mPlace;
+	// name of jni method which failed due to java exception
+	std::string			mPlace;
 };
 
 class TJJavaOutOfMemory : public TJJavaException

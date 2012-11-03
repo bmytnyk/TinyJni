@@ -1,3 +1,11 @@
+/*
+* Copyright (c) 2012
+* Bogdan Mytnyk <bogdan.myntyk@gmail.com>
+*
+* This library is free software; you can redistribute it and/or modify
+* it under the terms of the MIT license.
+*/
+
 #ifndef __TG_TYPES_H__
 #define __TG_TYPES_H__
 

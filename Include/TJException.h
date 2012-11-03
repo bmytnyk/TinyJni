@@ -1,3 +1,11 @@
+/*
+* Copyright (c) 2012
+* Bogdan Mytnyk <bogdan.myntyk@gmail.com>
+*
+* This library is free software; you can redistribute it and/or modify
+* it under the terms of the MIT license.
+*/
+
 #ifndef __TG_EXCEPTION_H__
 #define __TG_EXCEPTION_H__
 
@@ -73,8 +81,8 @@ public:
 	virtual ~TJNIException() throw();
 
 private:
-	TJInt		mCode;
-	std::string mDescription;
+	TJInt			mCode;
+	std::string		mDescription;
 };
 
 #endif //__TG_COMMON_H_
