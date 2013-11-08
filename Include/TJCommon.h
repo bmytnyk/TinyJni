@@ -13,6 +13,7 @@
 
 #include <cassert>
 #include <string>
+#include <vector>
 
 // defines for different operating systems
 
@@ -44,7 +45,10 @@ enum TJJNIVersion
 // returns:
 // JNIEnv pointer for current thread or NULL in case of error
 // never throws
-JNIEnv* TJCreateJavaVm(const std::string& libPath, TJJNIVersion version);
+
+typedef std::vector<std::string> TJStringArray;
+
+JNIEnv* TJCreateJavaVm(const std::string& libPath, TJJNIVersion version, const TJStringArray& args = TJStringArray());
 
 // Destroys previously created java vm and unloads jvm library
 // params:

@@ -37,15 +37,17 @@ public:
 	template <typename PrimitiveType>
 	PrimitiveType field(const std::string& name);
 
-	template <typename JavaType>
-	void setField(const std::string& fieldName, JavaType value);
+	template <typename JavaPrimitiveType>
+	void setField(const std::string& fieldName, JavaPrimitiveType value);
 
 	void setField(const std::string& fieldName, const TJStringRef& string);
-
+	
+	template <>
 	void setField(const std::string& fieldName, jstring string);
 
 	void setField(const std::string& fieldName, const TJObjectRef& object);
 
+	template <>
 	void setField(const std::string& fieldName, jobject object);
 
 	const std::string& descriptor() const {return mClassRef->descriptor();};

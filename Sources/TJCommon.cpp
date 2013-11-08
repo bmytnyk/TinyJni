@@ -31,7 +31,13 @@ static const jint kRequiredVersion = JNI_VERSION_1_2;
 typedef jint (JNICALL *JNI_CreateJavaVMPtr) (JavaVM **pvm, void **penv, void *args);
 typedef jint (JNICALL *JNI_GetDefaultJavaVMInitArgsPtr)(void *args);
 
-JNIEnv* TJCreateJavaVm(const std::string& libPath, TJJNIVersion version)
+//jint JNI_GetCreatedJavaVMs(JavaVM **vmBuf, jsize bufLen, jsize *nVMs);
+typedef jint (JNICALL *JNI_GetCreatedJavaVMsPtr)(JavaVM **vmBuf, jsize bufLen, jsize *nVMs);
+
+static JNI_GetCreatedJavaVMsPtr sGetCreatedJavaVMsPtr = NULL;
+
+
+JNIEnv* TJCreateJavaVm(const std::string& libPath, TJJNIVersion version, const TJStringArray& args)
 {
 	// check if vm already exists
 	if (sJavaVM != NULL)
@@ -48,11 +54,28 @@ JNIEnv* TJCreateJavaVm(const std::string& libPath, TJJNIVersion version)
 	// get appropriate function pointers
 	pCreateFunc = reinterpret_cast<JNI_CreateJavaVMPtr>(::GetProcAddress(sVMLibrary, "JNI_CreateJavaVM"));
 	if (pCreateFunc == NULL)
+	{
+		::FreeLibrary(sVMLibrary);
+		sVMLibrary = NULL;
 		return NULL;
-
+	}
+	
 	pGetDefaultArgFunc = reinterpret_cast<JNI_GetDefaultJavaVMInitArgsPtr>(::GetProcAddress(sVMLibrary, "JNI_GetDefaultJavaVMInitArgs"));
 	if (pGetDefaultArgFunc == NULL)
+	{
+		::FreeLibrary(sVMLibrary);
+		sVMLibrary = NULL;
 		return NULL;
+	}
+
+	/*sGetCreatedJavaVMsPtr = reinterpret_cast<JNI_GetCreatedJavaVMsPtr>(::GetProcAddress(sVMLibrary, "JNI_GetCreatedJavaVMsPtr"));
+	if (sGetCreatedJavaVMsPtr == NULL)
+	{
+		::FreeLibrary(sVMLibrary);
+		sVMLibrary = NULL;
+		return NULL;
+	}*/
+
 #else
 	// TODO : other platform implementation
 #endif
@@ -60,8 +83,25 @@ JNIEnv* TJCreateJavaVm(const std::string& libPath, TJJNIVersion version)
 	JavaVMInitArgs vm_args = {0};
     vm_args.version = static_cast<TJInt>(version);
     
+	std::vector<JavaVMOption> optionsArray;
+	if (!args.empty())
+	{
+		size_t optionCount = args.size();
+		vm_args.nOptions = static_cast<jint>(optionCount);
+		
+		optionsArray.resize(optionCount);
+		for (size_t i = 0; i < optionCount; ++i)
+		{
+			optionsArray[i].optionString = (char*)args[i].c_str();
+			optionsArray[i].extraInfo = NULL;
+		}
+
+		vm_args.options = &optionsArray[0];
+		vm_args.ignoreUnrecognized = TRUE;
+	}
+
 	/* Get the default initialization arguments and set the class  path */ 
-    pGetDefaultArgFunc(&vm_args); 
+    //pGetDefaultArgFunc(&vm_args); 
  
     /* load and initialize a Java VM, return a JNI interface  pointer in env */ 
     JNIEnv* env = NULL;

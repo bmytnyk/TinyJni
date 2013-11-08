@@ -43,7 +43,7 @@ TJClassRef::TJClassRef(jclass classHandle, TJRefType refType, bool makeCopy):
 
 			// convert a.b.c form to La/b/c class name form
 			std::replace(mClassName.begin(), mClassName.end(), '.', '/');
-			mClassName = "L" + mClassName;
+			mClassName = std::string("L") + mClassName;
 		}
 
 		jniEnv->ReleaseStringUTFChars(name, chars);
