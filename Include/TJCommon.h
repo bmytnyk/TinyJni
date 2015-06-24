@@ -19,6 +19,8 @@
 // do for other platforms
 #endif
 
+#define TJ_USE_CPP11
+
 enum TJJNIVersion
 {
 	kJNIVersion_1_1 = JNI_VERSION_1_1,

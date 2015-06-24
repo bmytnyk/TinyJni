@@ -5,6 +5,8 @@
 #include "TJCommon.h"
 #include "TJTypeTraits.h"
 
+#include <vector>
+
 class TJValue
 {
 public:
@@ -84,6 +86,8 @@ inline TJValue::TJValue(jobject objValue):
 {
 	mJavaValue.l = objValue;
 }
+
+typedef std::vector<TJValue> TJValueVector;
 
 #endif
 
