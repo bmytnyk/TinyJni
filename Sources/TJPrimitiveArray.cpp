@@ -56,7 +56,7 @@
 			GenerateJavaException(environment, environment->ExceptionOccurred(), "acquireElements for array failed");								\
 		return arrayElementsPtr;																										\
 	}																														\
-	void TJJavaArrayTraits<TJ##type>::releaseElements(JNIEnv* environment, TJJavaArrayTraits<TJ##type>::ArrayType array, NativeType* ptr)		\
+	void TJJavaArrayTraits<TJ##type>::releaseElements(JNIEnv* environment, TJJavaArrayTraits<TJ##type>::ArrayType array, NativeType* ptr)	throw()	\
 	{																														\
 		TJ_ASSERT(array != NULL);																							\
 		TJ_ASSERT(environment != NULL);																						\

@@ -98,6 +98,7 @@ void TJStringRef::releaseUtf8Chars()
 			throw TJNIException(kThreadDetached, "Failed to get jni environment");
 
 		jniEnv->ReleaseStringUTFChars(mHandle, mUtf8Chars);
+		mUtf8Chars = NULL;
 	}
 }
 
@@ -127,5 +128,6 @@ void TJStringRef::releaseUtf16Chars()
 			throw TJNIException(kThreadDetached, "Failed to get jni environment");
 
 		jniEnv->ReleaseStringChars(mHandle, mUtf16Chars);
+		mUtf16Chars = NULL;
 	}
 }

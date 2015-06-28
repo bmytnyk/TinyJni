@@ -42,12 +42,10 @@ public:
 
 	void setField(const std::string& fieldName, const TJStringRef& string);
 	
-	template <>
 	void setField(const std::string& fieldName, jstring string);
 
 	void setField(const std::string& fieldName, const TJObjectRef& object);
 
-	template <>
 	void setField(const std::string& fieldName, jobject object);
 
 	const std::string& descriptor() const {return mClassRef->descriptor();};

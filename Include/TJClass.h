@@ -203,18 +203,19 @@ RetType TJClassRef::call(const std::string& methodName, const TJValue* args, siz
 
 	// creating sig
 	std::string signature = "";
-	jvalue args[1024] = { 0 };
+	jvalue rawArgs[1024] = {0};
+
 	for (size_t i = 0; i < count; ++i)
 	{
 		signature += args[i].descriptor();
-		args[i] = args[i].value();
+		rawArgs[i] = args[i].handle();
 	}
 
-	jmethodID methodID = environment->GetStaticMethodID(mHandle, methodName.c_str(), signature);
+	jmethodID methodID = environment->GetStaticMethodID(mHandle, methodName.c_str(), signature.c_str());
 	if (methodID == NULL)
 		GenerateJavaException(environment, environment->ExceptionOccurred(), "GetStaticMethodID failed");
 
-	RetType res = TJTypeTraits<RetType>::CallStaticMethod(environment, mHandle, methodID, args);
+	RetType res = TJTypeTraits<RetType>::CallStaticMethod(environment, mHandle, methodID, rawArgs);
 
 	if (environment->ExceptionCheck() == JNI_TRUE)
 		GenerateJavaException(environment, environment->ExceptionOccurred(), std::string("Method ") + methodName + std::string(" failed"));

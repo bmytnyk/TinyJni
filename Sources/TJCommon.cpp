@@ -20,6 +20,8 @@
 #include "windows.h"
 HINSTANCE sVMLibrary = NULL;
 #elif defined (TJ_ANDROID)
+#include <dlfcn.h>
+
 void* sVMLibrary = NULL;
 #else
 // Another platform implementation
@@ -77,7 +79,27 @@ JNIEnv* TJCreateJavaVm(const std::string& libPath, TJJNIVersion version, const T
 	}*/
 
 #else
-	// TODO : other platform implementation
+
+	sVMLibrary = dlopen(libPath.c_str(), RTLD_NOW);
+	if (sVMLibrary == NULL)
+		return NULL;
+	
+	pCreateFunc = reinterpret_cast<JNI_CreateJavaVMPtr>(dlsym(sVMLibrary, "JNI_CreateJavaVM"));
+	if (pCreateFunc == NULL)
+	{
+		dlclose(sVMLibrary);
+		sVMLibrary = NULL;
+		return NULL;
+	}
+
+	pGetDefaultArgFunc = reinterpret_cast<JNI_GetDefaultJavaVMInitArgsPtr>(dlsym(sVMLibrary, "JNI_GetDefaultJavaVMInitArgs"));
+	if (pGetDefaultArgFunc == NULL)
+	{
+		dlclose(sVMLibrary);
+		sVMLibrary = NULL;
+		return NULL;
+	}
+
 #endif
 
 	JavaVMInitArgs vm_args = {0};
@@ -97,7 +119,7 @@ JNIEnv* TJCreateJavaVm(const std::string& libPath, TJJNIVersion version, const T
 		}
 
 		vm_args.options = &optionsArray[0];
-		vm_args.ignoreUnrecognized = TRUE;
+		vm_args.ignoreUnrecognized = JNI_TRUE;
 	}
 
 	/* Get the default initialization arguments and set the class  path */ 
@@ -122,8 +144,8 @@ void TJDestroyJavaVM()
 		// unloads library
 		::FreeLibrary(sVMLibrary);
 #else
-
 		// unload library on other platform
+		dlclose(sVMLibrary);
 #endif
 		// set all to NULL
 		sVMLibrary = NULL;
