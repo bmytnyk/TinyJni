@@ -25,6 +25,8 @@ enum TJRefType
 template <typename JavaType>
 class TJRef
 {
+	static_assert(std::is_pointer<JavaType>::value, "JavaType should be pointer");
+
 protected:
 	TJRefType		mType;
 	JavaType		mHandle;
@@ -33,8 +35,10 @@ public:
 	explicit TJRef(JavaType value, TJRefType refType = kGlobalRef, bool makeCopy = true);
 	TJRef(const TJRef<JavaType>& rht);
 	TJRef<JavaType>& operator=(const TJRef<JavaType>& rht);
+	TJRef(TJRef&& ref);
+	TJRef& operator=(TJRef&& ref);
 
-	~TJRef() throw ();
+	~TJRef() noexcept;
 
 	inline JavaType get() const {return mHandle;}
 	inline TJRefType refType() const {return mType;} 
@@ -90,10 +94,32 @@ TJRef<JavaType>& TJRef<JavaType>::operator=(const TJRef<JavaType>& rht)
 }
 
 template <typename JavaType>
-TJRef<JavaType>::~TJRef() throw ()
+TJRef<JavaType>::TJRef(TJRef<JavaType>&& ref):
+	mType(ref.mType),
+	mHandle(ref.mHandle)
+{
+	ref.mHandle = nullptr;
+}
+
+template <typename JavaType>
+TJRef<JavaType>& TJRef<JavaType>::operator=(TJRef<JavaType>&& ref)
+{
+	deleteHandle(mHandle, mType);
+
+	mType = ref.mType;
+	mHandle = ref.mHandle;
+
+	ref.mHandle = nullptr;
+
+	return *this;
+}
+
+template <typename JavaType>
+TJRef<JavaType>::~TJRef() noexcept
 {
 	// guaranteed - no exception
-	deleteHandle(mHandle, mType);
+	if (mHandle != nullptr)
+		deleteHandle(mHandle, mType);
 }
 
 template <typename JavaType>
@@ -146,7 +172,7 @@ void TJRef<JavaType>::deleteHandle(JavaType handle, TJRefType refType) throw()
 	// use no exception version - delete handle has exception specification
 	JNIEnv* environment = TJGetEnvironment();
 
-	if (environment != NULL)
+	if ((environment != nullptr) && (handle != nullptr))
 	{
 		switch(refType)
 		{

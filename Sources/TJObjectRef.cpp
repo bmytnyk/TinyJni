@@ -10,7 +10,10 @@
 #include "../Include/TJObjectRef.h"
 #include "../Include/TJUtils.h"
 
-const char* kConstructorName = "<init>";
+namespace
+{
+	const char* kConstructorName = "<init>";
+};
 
 TJObjectRef::TJObjectRef(const TJClassRef& classRef, jobject sourceObj, bool doCopy, TJRefType refType):
 	TJRef<jobject>(sourceObj, refType, doCopy),
@@ -20,7 +23,7 @@ TJObjectRef::TJObjectRef(const TJClassRef& classRef, jobject sourceObj, bool doC
 
 TJObjectRef::TJObjectRef(jobject sourceObj, bool doCopy, TJRefType refType):
 	TJRef<jobject>(sourceObj, refType, doCopy),
-	mClassRef(NULL)
+	mClassRef(nullptr)
 {
 	JNIEnv* environment = TJGetEnvironment();
 	if (environment == NULL)
@@ -46,7 +49,20 @@ TJObjectRef& TJObjectRef::operator=(const TJObjectRef& rht)
 	return *this;
 }
 
-TJObjectRef::~TJObjectRef()
+TJObjectRef::TJObjectRef(TJObjectRef&& rht):
+	TJRef<jobject>(std::move(rht)),
+	mClassRef(rht.mClassRef)
+{
+}
+
+TJObjectRef& TJObjectRef::operator=(TJObjectRef&& rht)
+{
+	TJRef<jobject>::operator=(std::move(rht));
+	mClassRef = std::move(rht.mClassRef);
+	return *this;
+}
+
+TJObjectRef::~TJObjectRef() noexcept
 {
 	delete mClassRef;
 }
@@ -81,7 +97,7 @@ TJObjectRef TJObjectRef::createObjectVarArgs(const char* className, const char* 
 	return TJObjectRef(classRef, objRef, true, kGlobalRef);
 }
 
-TJObjectRef TJObjectRef::createObject(const std::string& className, const std::string& constrSignature, 
+TJObjectRef TJObjectRef::createObjectFromTJValues(const std::string& className, const std::string& constrSignature,
 									const TJValue* values, size_t count, TJRefType refType)
 {
 	// check environment
@@ -118,4 +134,9 @@ TJObjectRef TJObjectRef::createObject(const std::string& className, const std::s
 		TJObjectRef resultRef(classRef, objRefLocal, true, refType);
 		return resultRef;
 	}
+}
+
+TJObjectRef TJObjectRef::createObjectInternal(const std::string& methodName, const std::string& signature, TJValueVector& args)
+{
+	return createObjectFromTJValues(methodName, signature, args.data(), args.size(), kGlobalRef);
 }

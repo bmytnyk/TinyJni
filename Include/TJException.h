@@ -21,6 +21,7 @@
 
 enum
 {
+	kInvalidHandle = 4,
 	kClassNotFound = 3,
 	kInvalidFunctionArg = 2,
 	kInvalidVM = 1,

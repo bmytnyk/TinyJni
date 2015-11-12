@@ -27,56 +27,55 @@ void* sVMLibrary = NULL;
 // Another platform implementation
 #endif
 
-static JavaVM* sJavaVM = NULL;
-static const jint kRequiredVersion = JNI_VERSION_1_2;
+namespace
+{
+	typedef jint (JNICALL *JNI_CreateJavaVMPtr) (JavaVM **pvm, void **penv, void *args);
+	typedef jint (JNICALL *JNI_GetDefaultJavaVMInitArgsPtr)(void *args);
+	typedef jint (JNICALL *JNI_GetCreatedJavaVMsPtr)(JavaVM **vmBuf, jsize bufLen, jsize *nVMs);
 
-typedef jint (JNICALL *JNI_CreateJavaVMPtr) (JavaVM **pvm, void **penv, void *args);
-typedef jint (JNICALL *JNI_GetDefaultJavaVMInitArgsPtr)(void *args);
-
-//jint JNI_GetCreatedJavaVMs(JavaVM **vmBuf, jsize bufLen, jsize *nVMs);
-typedef jint (JNICALL *JNI_GetCreatedJavaVMsPtr)(JavaVM **vmBuf, jsize bufLen, jsize *nVMs);
-
-static JNI_GetCreatedJavaVMsPtr sGetCreatedJavaVMsPtr = NULL;
+	JavaVM* sJavaVM = nullptr;
+	jint sCreatedVersion = JNI_VERSION_1_2;
+	JNI_GetCreatedJavaVMsPtr sGetCreatedJavaVMsPtr = nullptr;
+	JNI_CreateJavaVMPtr pCreateFunc = nullptr;
+	JNI_GetDefaultJavaVMInitArgsPtr pGetDefaultArgFunc = nullptr;
+};
 
 
 JNIEnv* TJCreateJavaVm(const std::string& libPath, TJJNIVersion version, const TJStringArray& args)
 {
 	// check if vm already exists
-	if (sJavaVM != NULL)
+	if (sJavaVM != nullptr)
 		return TJGetEnvironment();
-
-	JNI_CreateJavaVMPtr pCreateFunc = NULL;
-	JNI_GetDefaultJavaVMInitArgsPtr pGetDefaultArgFunc = NULL;
 
 #ifdef _WIN32
 	sVMLibrary = ::LoadLibraryA(libPath.c_str());
-	if (sVMLibrary == NULL)
-		return NULL;
+	if (sVMLibrary == nullptr)
+		return nullptr;
 
 	// get appropriate function pointers
 	pCreateFunc = reinterpret_cast<JNI_CreateJavaVMPtr>(::GetProcAddress(sVMLibrary, "JNI_CreateJavaVM"));
-	if (pCreateFunc == NULL)
+	if (pCreateFunc == nullptr)
 	{
 		::FreeLibrary(sVMLibrary);
-		sVMLibrary = NULL;
-		return NULL;
+		sVMLibrary = nullptr;
+		return nullptr;
 	}
 	
 	pGetDefaultArgFunc = reinterpret_cast<JNI_GetDefaultJavaVMInitArgsPtr>(::GetProcAddress(sVMLibrary, "JNI_GetDefaultJavaVMInitArgs"));
-	if (pGetDefaultArgFunc == NULL)
+	if (pGetDefaultArgFunc == nullptr)
 	{
 		::FreeLibrary(sVMLibrary);
-		sVMLibrary = NULL;
-		return NULL;
+		sVMLibrary = nullptr;
+		return nullptr;
 	}
 
-	/*sGetCreatedJavaVMsPtr = reinterpret_cast<JNI_GetCreatedJavaVMsPtr>(::GetProcAddress(sVMLibrary, "JNI_GetCreatedJavaVMsPtr"));
+	sGetCreatedJavaVMsPtr = reinterpret_cast<JNI_GetCreatedJavaVMsPtr>(::GetProcAddress(sVMLibrary, "JNI_GetCreatedJavaVMs"));
 	if (sGetCreatedJavaVMsPtr == NULL)
 	{
 		::FreeLibrary(sVMLibrary);
-		sVMLibrary = NULL;
-		return NULL;
-	}*/
+		sVMLibrary = nullptr;
+		return nullptr;
+	}
 
 #else
 
@@ -127,19 +126,19 @@ JNIEnv* TJCreateJavaVm(const std::string& libPath, TJJNIVersion version, const T
  
     /* load and initialize a Java VM, return a JNI interface  pointer in env */ 
     JNIEnv* env = NULL;
-	pCreateFunc(&sJavaVM, reinterpret_cast<void**>(&env), &vm_args); 
-	
-#ifdef WIN32
-	sJniEnv = env;
-#endif
+	pCreateFunc(&sJavaVM, reinterpret_cast<void**>(&env), &vm_args);
+	sCreatedVersion = version;
 
 	return env;
 }
 
-void TJDestroyJavaVM()
+void TJDestroyJavaVM() noexcept
 {
-	if (sVMLibrary != NULL)
+	if (sVMLibrary != nullptr)
 	{
+		if (sJavaVM != nullptr)
+			sJavaVM->DestroyJavaVM();
+
 #ifdef _WIN32
 		// unloads library
 		::FreeLibrary(sVMLibrary);
@@ -148,8 +147,8 @@ void TJDestroyJavaVM()
 		dlclose(sVMLibrary);
 #endif
 		// set all to NULL
-		sVMLibrary = NULL;
-		sJavaVM = NULL;
+		sVMLibrary = nullptr;
+		sJavaVM = nullptr;
 	}
 }
 
@@ -158,7 +157,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved)
 	TJ_UNREFERENCED_PARAMETER(reserved);
 	assert(vm != NULL);
 	sJavaVM = vm;
-	return kRequiredVersion;
+	return sCreatedVersion;
 }
 
 JNIEXPORT void JNICALL JNI_OnUnload(JavaVM* vm, void* reserved)
@@ -169,9 +168,9 @@ JNIEXPORT void JNICALL JNI_OnUnload(JavaVM* vm, void* reserved)
 	sJavaVM = NULL;
 }
 
-JNIEnv* TJGetEnvironment(TJInt* pError)
+JNIEnv* TJGetEnvironment(TJInt* pError) noexcept
 {
-	TJ_ASSERT(sJavaVM != NULL);
+	//TJ_ASSERT(sJavaVM != NULL);
 	JNIEnv* env = NULL;
 	if (sJavaVM == NULL)
 	{
@@ -180,7 +179,7 @@ JNIEnv* TJGetEnvironment(TJInt* pError)
 		return NULL;
 	}
 
-	TJInt res = sJavaVM->GetEnv(reinterpret_cast<void**>(&env), kRequiredVersion);
+	TJInt res = sJavaVM->GetEnv(reinterpret_cast<void**>(&env), sCreatedVersion);
 	if (pError != NULL)
 		*pError = res;
 
@@ -207,12 +206,10 @@ JNIEnv* TJAttachCurrentThreadToJNI(TJInt* pError)
 		return NULL;
 	}
 
-
 #ifdef WIN32
 	TJInt res = sJavaVM->AttachCurrentThread(reinterpret_cast<void**>(&env), NULL);
 	if (pError != NULL)
 		*pError = res;
-	sJniEnv = env;
 #else
 	TJInt res = sJavaVM->AttachCurrentThread(&env, NULL);
 	if (pError != NULL)
@@ -224,13 +221,8 @@ JNIEnv* TJAttachCurrentThreadToJNI(TJInt* pError)
 
 TJInt TJDetachCurrentThreadFromJni()
 {
-	assert(sJavaVM != NULL);
-	if (sJavaVM == NULL)
+	if (sJavaVM == nullptr)
 		return kInvalidVM;
 
 	return sJavaVM->DetachCurrentThread();
 }
-
-#ifdef _WIN32
-_declspec(thread) JNIEnv* sJniEnv = NULL;
-#endif

@@ -11,6 +11,7 @@
 #include "../Include/TJObjectRef.h"
 #include "../Include/TJValue.h"
 #include "../Include/TJUtils.h"
+#include "../Include/TJString.h"
 
 #include <algorithm>
 
@@ -19,17 +20,17 @@ TJClassRef::TJClassRef(jclass classHandle, TJRefType refType, bool makeCopy):
 	mClassName("")
 {
 	JNIEnv* jniEnv = TJGetEnvironment();
-	if (jniEnv == NULL)
+	if (jniEnv == nullptr)
 		throw TJNIException(kThreadDetached, "Failed to get jni environment");
 
 	TJMethodID methodNameId = jniEnv->GetMethodID(mHandle, "toString", "()Ljava/lang/String;");
-	TJ_ASSERT (methodNameId != NULL);
+	TJ_ASSERT (methodNameId != nullptr);
 	
 	ScopedLocalRef<jstring> name(static_cast<jstring>(jniEnv->CallObjectMethod(mHandle, methodNameId)));
-	if (name != NULL)
+	if (name != nullptr)
 	{
-		const char* chars = jniEnv->GetStringUTFChars(name, NULL);
-		if (chars == NULL)
+		const char* chars = jniEnv->GetStringUTFChars(name, nullptr);
+		if (chars == nullptr)
 			GenerateJavaException(jniEnv, jniEnv->ExceptionOccurred(), "GetStringUTFChars failed in TJClassRef::TJClassRef");
 
 		size_t length = static_cast<size_t>(jniEnv->GetStringUTFLength(name));
@@ -63,6 +64,19 @@ TJClassRef& TJClassRef::operator = (const TJClassRef& rht)
 		Base::operator=(rht);
 		mClassName = rht.mClassName;
 	}
+	return *this;
+}
+
+TJClassRef::TJClassRef(TJClassRef&& rht):
+	TJRef<jclass>(std::move(rht)),
+	mClassName(std::move(rht.mClassName))
+{
+}
+
+TJClassRef& TJClassRef::operator=(TJClassRef&& rht)
+{
+	TJRef<jclass>::operator=(std::move(rht));
+	mClassName = std::move(rht.mClassName);
 	return *this;
 }
 
@@ -118,7 +132,7 @@ bool TJClassRef::operator == (const TJClassRef& rht) const
 	if (environment == NULL)
 		throw TJNIException(kThreadDetached, "Failed to get jnienv pointer in TJClassRef::operator ==");
 
-	return environment->IsSameObject(mHandle, rht.mHandle) == JNI_TRUE; 
+	return environment->IsSameObject(mHandle, rht.mHandle) == JNI_TRUE;
 }
 
 bool TJClassRef::operator != (const TJClassRef& rht) const
@@ -128,54 +142,54 @@ bool TJClassRef::operator != (const TJClassRef& rht) const
 
 void TJClassRef::setField(const std::string& fieldName, const TJObjectRef& field)
 {
-	JNIEnv* environment = TJGetEnvironment();
-	if (environment == NULL)
-		throw TJNIException(kThreadDetached, "Failed to get jnienv in TJClassRef::setObjectField");
-
-	jfieldID fieldDescriptor = environment->GetStaticFieldID(mHandle, fieldName.c_str(), field.descriptor().c_str());
-	if (fieldDescriptor == NULL)
-		GenerateJavaException(environment, environment->ExceptionOccurred(), "GetStaticFieldID failed in TJClassRef::setObjectField");
-
-	environment->SetStaticObjectField(mHandle, fieldDescriptor, field.get());
+	setField(fieldName, field.get());
 }
 
 void TJClassRef::setField(const std::string& fieldName, jobject value)
 {
 	JNIEnv* environment = TJGetEnvironment();
-	if (environment == NULL)
+	if (environment == nullptr)
 		throw TJNIException(kThreadDetached, "Failed to get jnienv in TJClassRef::setObjectField");
+
+	if (value == nullptr)
+		throw TJInvalidArgument("Null value in setField");
 
 	TJClassRef classRef(environment->GetObjectClass(value), kLocalRef);
 
 	jfieldID fieldDescriptor = environment->GetStaticFieldID(mHandle, fieldName.c_str(), classRef.descriptor().c_str());
-	if (fieldDescriptor == NULL)
+	if (fieldDescriptor == nullptr)
 		GenerateJavaException(environment, environment->ExceptionOccurred(), "GetStaticFieldID failed in TJClassRef::setObjectField");
 
 	environment->SetStaticObjectField(mHandle, fieldDescriptor, value);
 }
 
+void TJClassRef::setField(const std::string& fieldName, const TJStringRef& stringRef)
+{
+	setField(fieldName, stringRef.get());
+}
+
 void TJClassRef::setField(const std::string& fieldName, jstring string)
 {
-	if (string == NULL)
+	if (string == nullptr)
 		throw TJInvalidArgument("Invalid string argument in setStringField");
 
 	JNIEnv* environment = TJGetEnvironment();
-	if (environment == NULL)
+	if (environment == nullptr)
 		throw TJNIException(kThreadDetached, "Failed to get jnienv in TJClassRef::setStringField");
 
 	jfieldID fieldDescriptor = environment->GetStaticFieldID(mHandle, fieldName.c_str(), "Ljava/lang/String;");
-	if (fieldDescriptor == NULL)
+	if (fieldDescriptor == nullptr)
 		GenerateJavaException(environment, environment->ExceptionOccurred(), "GetStaticFieldID failed in TJClassRef::setObjectField");
 }
 
 TJObjectRef TJClassRef::field(const std::string& name, const std::string& objClassDescriptor, TJRefType refType)
 {
 	JNIEnv* environment = TJGetEnvironment();
-	if (environment == NULL)
+	if (environment == nullptr)
 		throw TJNIException(kThreadDetached, "Failed to get jnienv in TJClassRef::getObjectField");
 
 	jfieldID fieldDescriptor = environment->GetStaticFieldID(mHandle, name.c_str(), objClassDescriptor.c_str());
-	if (fieldDescriptor == NULL)
+	if (fieldDescriptor == nullptr)
 		GenerateJavaException(environment, environment->ExceptionOccurred(), "GetStaticFieldID failed in TJClassRef::getObjectField");
 
 	jobject resObject = environment->GetStaticObjectField(mHandle, fieldDescriptor);

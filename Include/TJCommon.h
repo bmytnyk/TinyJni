@@ -28,14 +28,17 @@
 // do for other platforms
 #endif
 
-#define TJ_USE_CPP11
-
 enum TJJNIVersion
 {
 	kJNIVersion_1_1 = JNI_VERSION_1_1,
 	kJNIVersion_1_2 = JNI_VERSION_1_2,
 	kJNIVersion_1_4 = JNI_VERSION_1_4,
-	kJNIVersion_1_6 = JNI_VERSION_1_6
+	kJNIVersion_1_6 = JNI_VERSION_1_6,
+
+	// Additional constants
+	kJniVersionLast = JNI_VERSION_1_6,
+	kJniVersionFirst = JNI_VERSION_1_1,
+	kJniChooseLatest = static_cast<uint32_t>(-1)
 };
 
 // Create JavaVM if it was not created
@@ -56,16 +59,15 @@ JNIEnv* TJCreateJavaVm(const std::string& libPath, TJJNIVersion version, const T
 // return:
 // none
 // never throws
-void TJDestroyJavaVM();
+void TJDestroyJavaVM() noexcept;
 
 // Get JNIEnv* corresponed to current thread
 // params:
 // pointer to int which holds error code : can be NULL
 // returns:
-// JNIEnv8 for current thread or NULL if error happen
+// JNIEnv* for current thread or nullptr if error happen
 // never throws
-JNIEnv* TJGetEnvironment(TJInt* pError = NULL);
-
+JNIEnv* TJGetEnvironment(TJInt* pError = nullptr) noexcept;
 
 // Get JNIEnv* corresponed to current thread
 // params:
@@ -80,7 +82,7 @@ JNIEnv* TJGetEnvironmentExc();
 // If pError is not a NULL then return error code
 // If succeeded return pointer to current jni environment
 // If failed return NULL
-JNIEnv* TJAttachCurrentThreadToJNI(TJInt* pError = NULL);
+JNIEnv* TJAttachCurrentThreadToJNI(TJInt* pError = nullptr);
 
 // Detaches current thread from a Java VM
 // returns:
@@ -90,10 +92,6 @@ TJInt TJDetachCurrentThreadFromJni();
 #define TJ_ASSERT(arg) assert(arg)
 
 #define TJ_UNREFERENCED_PARAMETER(arg) arg
-
-#ifdef WIN32
-extern TJ_THREAD_SPECIFIC JNIEnv* sJniEnv;
-#endif
 
 #ifndef TJ_STATIC_ASSERT
 #define TJ_STATIC_ASSERT(condition, message) static_assert(condition, message)

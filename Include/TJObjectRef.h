@@ -13,9 +13,14 @@
 #include "TJClass.h"
 #include "TJValue.h"
 
+/*template <typename SourceRefType, typename DestRefType>
+DestRefType RefCast(const SourceRefType& refType, TJRefType refType = kLocalRef)
+{
+	return DestRefType(static_cast<>(refType.get()), true, refType);
+}*/
+
 //@brief
 //class that represents reference to java object
-//can't contain null reference
 
 class TJObjectRef : public TJRef<jobject>
 {
@@ -30,8 +35,10 @@ public:
 	TJObjectRef(jobject sourceObj, bool doCopy = true, TJRefType refType = kLocalRef);
 	TJObjectRef(const TJObjectRef& rht);
 	TJObjectRef& operator=(const TJObjectRef& rht);
+	TJObjectRef(TJObjectRef&& rht);
+	TJObjectRef& operator=(TJObjectRef&& rht);
 
-	virtual ~TJObjectRef();
+	~TJObjectRef() noexcept;
 
 	// set or get fields : only primitive types are acceptable
 	template <typename PrimitiveType>
@@ -50,12 +57,16 @@ public:
 
 	const std::string& descriptor() const {return mClassRef->descriptor();};
 
-	//@brief:
-	// call non-static methods for this objects (given by  class name)
-
 	template <typename RetType>
 	RetType call(const std::string& methodName, const std::string& signature);
 
+	//@brief:
+	// call non-static methods for this objects (given by  class name)
+
+	template <typename RetType, typename... JavaTypes>
+	RetType call(const std::string& methodName, const std::string& signature, JavaTypes... args);
+
+/*
 	template <typename RetType, typename ArgType>
 	RetType call(const std::string& methodName, const std::string& signature,
 									ArgType arg);
@@ -71,11 +82,16 @@ public:
 	template <typename RetType>
 	RetType call(const std::string& methodName, const std::string& signature, 
 									const TJValue* args, size_t count);
+*/
 
 	//@brief:
 	// create object's of the class (given by  class name)
 	static TJObjectRef createObject(const std::string& className, const std::string& constrSignature);
 
+	template <typename... JavaTypes>
+	static TJObjectRef createObject(const std::string& methodName, const std::string& signature, JavaTypes... args);
+
+/*
 	template <typename ArgType>
 	static TJObjectRef createObject(const std::string& className, const std::string& constrSignature,
 									ArgType arg);
@@ -91,14 +107,27 @@ public:
 	template <typename ArgType1, typename ArgType2, typename ArgType3, typename ArgType4>
 	static TJObjectRef createObject(const std::string& className, const std::string& constrSignature, 
 									ArgType1 arg1, ArgType2 arg2, ArgType3 arg3, ArgType4 arg4);
+*/
 
-	static TJObjectRef createObject(const std::string& className, const std::string& constrSignature, 
+	static TJObjectRef createObjectFromTJValues(const std::string& className, const std::string& constrSignature, 
 									const TJValue* values, size_t count, TJRefType refType);
 
 	// maximal args count for createObject
 	static const size_t sMaxArgsCount = 128;
 
 private:
+
+	template <typename RetType>
+	RetType callInternal(const std::string& methodName, const std::string& signature, const TJValueVector& args);
+
+	template <typename RetType, typename ArgType, typename... JavaTypes>
+	RetType callInternal(const std::string& methodName, const std::string& signature, TJValueVector& addedArgs, ArgType value, JavaTypes... futureArgs);
+
+	static TJObjectRef createObjectInternal(const std::string& methodName, const std::string& signature, TJValueVector& addedargs);
+
+	template <typename ArgType, typename... JavaTypes>
+	static TJObjectRef createObjectInternal(const std::string& methodName, const std::string& signature, TJValueVector& addedArgs, ArgType value, JavaTypes... futureArgs);
+
 	//@brief:
 	// call object method
 	//@params:
@@ -117,13 +146,26 @@ private:
 	static TJObjectRef createObjectVarArgs(const char* className, const char* constrSignature, ...);
 };
 
-extern const char* kConstructorName;
-
 inline TJObjectRef TJObjectRef::createObject(const std::string& className, const std::string& constrSignature)
 {
 	return createObjectVarArgs(className.c_str(), constrSignature.c_str());
 }
 
+template <typename... JavaTypes>
+TJObjectRef TJObjectRef::createObject(const std::string& methodName, const std::string& signature, JavaTypes... args)
+{
+	TJValueVector values;
+	return createObjectInternal(methodName, signature, values, args...);
+}
+
+template <typename ArgType, typename... JavaTypes>
+TJObjectRef TJObjectRef::createObjectInternal(const std::string& methodName, const std::string& signature, TJValueVector& addedArgs, ArgType value, JavaTypes... futureArgs)
+{
+	addedArgs.push_back(TJValue(value));
+	return createObjectInternal(methodName, signature, addedArgs, futureArgs...);
+}
+
+/*
 template <typename ArgType>
 TJObjectRef TJObjectRef::createObject(const std::string& className, const std::string& constrSignature, ArgType arg)
 {
@@ -165,7 +207,7 @@ TJObjectRef TJObjectRef::createObject(const std::string& className, const std::s
 
 	return createObjectVarArgs(className.c_str(), constrSignature.c_str(), arg1, arg2, arg3, arg4);
 }
-
+*/
 
 template <typename RetType>
 RetType TJObjectRef::callVarArgs(const char* methodName, const char* signature, ...)
@@ -195,6 +237,28 @@ RetType TJObjectRef::call(const std::string& methodName, const std::string& sign
 	return callVarArgs<RetType>(methodName.c_str(), signature.c_str());
 }
 
+template <typename RetType, typename... JavaTypes>
+RetType TJObjectRef::call(const std::string& methodName, const std::string& signature, JavaTypes... args)
+{
+	return call(methodName, signature, args...)
+}
+
+template <typename RetType>
+RetType TJObjectRef::callInternal(const std::string& methodName, const std::string& signature, const TJValueVector& args)
+{
+	return call(methodName, args.data(), args.size());
+}
+
+template <typename RetType, typename ArgType, typename... JavaTypes>
+RetType TJObjectRef::callInternal(const std::string& methodName, const std::string& signature, TJValueVector& addedArgs, ArgType singleArgument, JavaTypes... args)
+{
+	TJ_STATIC_ASSERT(TJTypeTraits<ArgType>::sApplicableArg, "Invalid argument");
+	addedArgs.push_back(TJValue(singleArgument));
+	return callInternal(methodName, signature, addedArgs, args...);
+}
+
+/*
+
 template <typename RetType, typename ArgType>
 RetType TJObjectRef::call(const std::string& methodName, const std::string& signature, ArgType arg)
 {
@@ -211,6 +275,8 @@ RetType TJObjectRef::call(const std::string& methodName, const std::string& sign
 	
 	return callVarArgs(methodName.c_str(), signature.c_str(), arg1, arg2);
 }
+
+*/
 
 template <typename PrimitiveType>
 PrimitiveType TJObjectRef::field(const std::string& name)

@@ -28,6 +28,8 @@ public:
 	explicit TJClassRef(jclass classHandle, TJRefType refType = kGlobalRef, bool makeCopy = true);
 	TJClassRef(const TJClassRef& rht);
 	TJClassRef& operator = (const TJClassRef& rht);
+	TJClassRef(TJClassRef&& rht);
+	TJClassRef& operator = (TJClassRef&& rht);
 
 	const std::string& descriptor() const {return mClassName;};
 
@@ -37,7 +39,6 @@ public:
 	template <typename RetType>
 	RetType call(const std::string& methodName, const std::string& signature);
 
-#ifdef TJ_USE_CPP11
 	template <typename RetType, typename... JavaTypes>
 	RetType call(const std::string& methodName, const std::string& signature, JavaTypes... args);
 
@@ -47,7 +48,7 @@ public:
 	template <typename RetType, typename ArgType, typename... JavaTypes>
 	RetType callInternal(const std::string& methodName, const std::string& signature, TJValueVector& addedArgs, ArgType value, JavaTypes... futureArgs);
 
-#else
+/*	
 	template <typename RetType, typename JavaType1>
 	RetType call(const std::string& methodName, const std::string& signature, JavaType1 arg1);
 
@@ -56,7 +57,8 @@ public:
 
 	template <typename RetType, typename JavaType1, typename JavaType2, typename JavaType3>
 	RetType call(const std::string& methodName, const std::string& signature, JavaType1 arg1, JavaType2 arg2, JavaType3 arg3);
-#endif
+*/
+
 
 	template <typename RetType>
 	RetType call(const std::string& methodName, const TJValue* args, size_t count);
@@ -68,7 +70,7 @@ public:
 	template <typename PrimitiveType>
 	PrimitiveType field(const std::string& name);
 
-	// return local reference to string field
+	// return reference to string field
 	TJStringRef field(const std::string& name, TJRefType refType);
 
 	TJObjectRef field(const std::string& name, const std::string& objClassDescriptor, TJRefType refType);
@@ -135,7 +137,7 @@ RetType TJClassRef::call(const std::string& methodName, const std::string& signa
 	return callVarArgs<RetType>(methodName.c_str(), signature.c_str());
 }
 
-#ifndef TJ_USE_CPP11
+/*
 
 template <typename RetType, typename JavaType1>
 RetType TJClassRef::call(const std::string& methodName, const std::string& signature, JavaType1 arg1)
@@ -164,32 +166,28 @@ RetType TJClassRef::call(const std::string& methodName, const std::string& signa
 	return callVarArgs<RetType>(methodName.c_str(), signature.c_str(), arg1, arg2, arg3);
 }
 
-#else
-
+*/
 
 template <typename RetType, typename... JavaTypes>
 RetType TJClassRef::call(const std::string& methodName, const std::string& signature, JavaTypes... args)
 {
-	TJValueVector args;
-	return call(methodName, signature, args...)
+	TJValueVector valuesVector;
+	return callInternal<RetType>(methodName, signature, valuesVector, args...);
 }
 
 template <typename RetType>
 RetType TJClassRef::callInternal(const std::string& methodName, const std::string& signature, const TJValueVector& args)
 {
-	return call(methodName, args.data(), args.size());
+	return call<RetType>(methodName, args.data(), args.size());
 }
 
 template <typename RetType, typename ArgType, typename... JavaTypes>
 RetType TJClassRef::callInternal(const std::string& methodName, const std::string& signature, TJValueVector& addedArgs, ArgType singleArgument, JavaTypes... args)
 {
 	TJ_STATIC_ASSERT(TJTypeTraits<ArgType>::sApplicableArg, "Invalid argument");
-	// TO THINK : emplace)
-	addedArgs.push_back(TJValue(singleArgument));
-	return callInternal(methodName, signature, addedArgs, args...);
+	addedArgs.emplace_back(TJValue(singleArgument));
+	return callInternal<RetType>(methodName, signature, addedArgs, args...);
 }
-
-#endif
 
 template <typename RetType>
 RetType TJClassRef::call(const std::string& methodName, const TJValue* args, size_t count)
@@ -201,7 +199,6 @@ RetType TJClassRef::call(const std::string& methodName, const TJValue* args, siz
 	if (environment == NULL)
 		throw TJNIException(kThreadDetached, "Failed to get jnienv in TJClassRef::call");
 
-	// creating sig
 	std::string signature = "";
 	jvalue rawArgs[1024] = {0};
 

@@ -66,13 +66,13 @@ private:
 	TJJavaPrimitiveArray(TJJavaArrayType javaArrayHandle, size_t size, TJRefType refType = kGlobalRef, bool makeCopy = true):
 		TJBase(javaArrayHandle, refType, makeCopy),
 		mCount(size),
-		mAcquiredDataPtr(NULL)
+		mAcquiredDataPtr(nullptr)
 	{
 	}
 
 public:
 
-	~TJJavaPrimitiveArray() throw ()
+	~TJJavaPrimitiveArray() noexcept
 	{
 		releasePtr();
 	}
@@ -87,7 +87,7 @@ public:
 	T* getPtr();
 
 	// never throws
-	void releasePtr() throw();
+	void releasePtr() noexcept;
 
 	void getRegion(TJSize startIdx, TJSize length, T* resultBuffer);
 	void setRegion(TJSize startIdx, TJSize length, const T* sourceBuffer);
@@ -95,23 +95,23 @@ public:
 	inline const	TJJavaArrayType get() const {return this->mHandle;}
 	inline			TJJavaArrayType get() {return this->mHandle;}
 	
-	static TJJavaPrimitiveArray CreateArray(size_t size, TJRefType refType);
+	static TJJavaPrimitiveArray CreateArray(TJSize size, TJRefType refType);
 
 private:
 	void* _getCriticalRow() const
 	{
 		JNIEnv* environment = TJGetEnvironment();
-		if (environment != NULL)
+		if (environment != nullptr)
 			return environment->GetPrimitiveArrayCritical(this->mHandle, NULL);
-		return NULL;
+		return nullptr;
 	}
 	
 	void _releaseCriticalRow(T* ptr) const
 	{
-		TJ_ASSERT(ptr != NULL);
+		TJ_ASSERT(ptr != nullptr);
 		JNIEnv* environment = TJGetEnvironment();
-        if (environment != NULL)
-			environment->ReleasePrimitiveArrayCritical(this->mHandle, ptr, NULL);
+        if (environment != nullptr)
+			environment->ReleasePrimitiveArrayCritical(this->mHandle, ptr, 0);
 	}
 };
 
@@ -119,10 +119,10 @@ template <typename T>
 T* TJJavaPrimitiveArray<T>::getPtr()
 {
 	JNIEnv* environment = TJGetEnvironment();
-	if (environment == NULL)
+	if (environment == nullptr)
 		throw TJNIException(kThreadDetached, "Failed to get jnienv in TJJavaPrimitiveArray::getPtr");
 
-	if (mAcquiredDataPtr != NULL)
+	if (mAcquiredDataPtr != nullptr)
 		return mAcquiredDataPtr;
 	mAcquiredDataPtr = TJJavaArrayTraits<T>::acquireElements(environment, this->mHandle);
 	return mAcquiredDataPtr;
@@ -142,25 +142,24 @@ const T* TJJavaPrimitiveArray<T>::getPtr() const
 }
 
 template <typename T>
-void TJJavaPrimitiveArray<T>::releasePtr() throw()
+void TJJavaPrimitiveArray<T>::releasePtr() noexcept
 {
 	JNIEnv* environment = TJGetEnvironment();
-	if ((environment != NULL) && (mAcquiredDataPtr != NULL))
+	if ((environment != nullptr) && (mAcquiredDataPtr != nullptr))
 	{
 		TJJavaArrayTraits<T>::releaseElements(environment, this->mHandle, mAcquiredDataPtr);
-		mAcquiredDataPtr = NULL;
+		mAcquiredDataPtr = nullptr;
 	}
 }
 
 template <typename T>
-TJJavaPrimitiveArray<T> TJJavaPrimitiveArray<T>::CreateArray(size_t size, TJRefType refType)
+TJJavaPrimitiveArray<T> TJJavaPrimitiveArray<T>::CreateArray(TJSize size, TJRefType refType)
 {
-	TJ_ASSERT(size != 0);
 	if (size == 0)
 		throw TJInvalidArgument("Invalid size in TJJavaPrimitiveArray<T>::CreateArray");
 
 	JNIEnv* jniEnv = TJGetEnvironment();
-	if (jniEnv == NULL)
+	if (jniEnv == nullptr)
 		throw TJNIException(kThreadDetached, "Failed to get jni environment in CreateArray");
 	
 	typename TJJavaArrayTraits<T>::ArrayType arrayObj = TJJavaArrayTraits<T>::create(jniEnv, size);
@@ -172,7 +171,7 @@ void TJJavaPrimitiveArray<T>::getRegion(TJSize startIdx, TJSize length, T* resul
 {
 	TJ_ASSERT(resultBuffer != NULL);
 
-	if ((startIdx + length > mCount) || (startIdx < 0) || (resultBuffer == NULL) || (length < 0))
+	if ((startIdx + length > static_cast<TJSize>(mCount)) || (startIdx < 0) || (resultBuffer == NULL) || (length < 0))
 		throw TJInvalidArgument("Invalid argument in TJJavaPrimitiveArray::getRegion");
 
 	JNIEnv* jniEnv = TJGetEnvironment();
@@ -194,7 +193,7 @@ void TJJavaPrimitiveArray<T>::setRegion(TJSize startIdx, TJSize length, const T*
 {
 	TJ_ASSERT(sourceBuffer != NULL);
 
-	if ((startIdx + length > mCount) || (startIdx < 0) || (sourceBuffer == NULL) || (length < 0))
+	if ((startIdx + length > static_cast<TJSize>(mCount)) || (startIdx < 0) || (sourceBuffer == NULL) || (length < 0))
 		throw TJInvalidArgument("Invalid argument in TJJavaPrimitiveArray::setRegion");
 
 	JNIEnv* jniEnv = TJGetEnvironment();
