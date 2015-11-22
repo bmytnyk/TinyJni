@@ -197,25 +197,17 @@ JNIEnv* TJGetEnvironmentExc()
 
 JNIEnv* TJAttachCurrentThreadToJNI(TJInt* pError)
 {
-	assert(sJavaVM != NULL);
-	JNIEnv* env = NULL;
-	if (sJavaVM == NULL)
+	JNIEnv* env = nullptr;
+	if (sJavaVM == nullptr)
 	{
-		if (pError != NULL)
+		if (pError != nullptr)
 			*pError = kInvalidVM;
-		return NULL;
+		return nullptr;
 	}
 
-#ifdef WIN32
 	TJInt res = sJavaVM->AttachCurrentThread(reinterpret_cast<void**>(&env), NULL);
-	if (pError != NULL)
+	if (pError != nullptr)
 		*pError = res;
-#else
-	TJInt res = sJavaVM->AttachCurrentThread(&env, NULL);
-	if (pError != NULL)
-		*pError = res;
-#endif
-
 	return env;
 }
 

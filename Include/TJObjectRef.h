@@ -32,7 +32,7 @@ public:
 	typedef TJRef<jobject> TJBaseObject;
 
 	TJObjectRef(const TJClassRef& classRef, jobject sourceObj, bool doCopy = true, TJRefType refType = kLocalRef);
-	TJObjectRef(jobject sourceObj, bool doCopy = true, TJRefType refType = kLocalRef);
+	explicit TJObjectRef(jobject sourceObj, bool doCopy = true, TJRefType refType = kLocalRef);
 	TJObjectRef(const TJObjectRef& rht);
 	TJObjectRef& operator=(const TJObjectRef& rht);
 	TJObjectRef(TJObjectRef&& rht);
@@ -66,48 +66,12 @@ public:
 	template <typename RetType, typename... JavaTypes>
 	RetType call(const std::string& methodName, const std::string& signature, JavaTypes... args);
 
-/*
-	template <typename RetType, typename ArgType>
-	RetType call(const std::string& methodName, const std::string& signature,
-									ArgType arg);
-
-	template <typename RetType, typename ArgType1, typename ArgType2>
-	RetType call(const std::string& methodName, const std::string& signature,
-									ArgType1 arg1, ArgType2 arg2);
-
-	template <typename RetType, typename ArgType1, typename ArgType2, typename ArgType3>
-	RetType call(const std::string& methodName, const std::string& signature,
-									ArgType1 arg1, ArgType2 arg2, ArgType3 arg3);
-	
-	template <typename RetType>
-	RetType call(const std::string& methodName, const std::string& signature, 
-									const TJValue* args, size_t count);
-*/
-
 	//@brief:
 	// create object's of the class (given by  class name)
 	static TJObjectRef createObject(const std::string& className, const std::string& constrSignature);
 
 	template <typename... JavaTypes>
 	static TJObjectRef createObject(const std::string& methodName, const std::string& signature, JavaTypes... args);
-
-/*
-	template <typename ArgType>
-	static TJObjectRef createObject(const std::string& className, const std::string& constrSignature,
-									ArgType arg);
-	
-	template <typename ArgType1, typename ArgType2>
-	static TJObjectRef createObject(const std::string& className, const std::string& constrSignature,
-									ArgType1 arg1, ArgType2 arg2);
-
-	template <typename ArgType1, typename ArgType2, typename ArgType3>
-	static TJObjectRef createObject(const std::string& className, const std::string& constrSignature, 
-									ArgType1 arg1, ArgType2 arg2, ArgType3 arg3);
-
-	template <typename ArgType1, typename ArgType2, typename ArgType3, typename ArgType4>
-	static TJObjectRef createObject(const std::string& className, const std::string& constrSignature, 
-									ArgType1 arg1, ArgType2 arg2, ArgType3 arg3, ArgType4 arg4);
-*/
 
 	static TJObjectRef createObjectFromTJValues(const std::string& className, const std::string& constrSignature, 
 									const TJValue* values, size_t count, TJRefType refType);
@@ -165,50 +129,6 @@ TJObjectRef TJObjectRef::createObjectInternal(const std::string& methodName, con
 	return createObjectInternal(methodName, signature, addedArgs, futureArgs...);
 }
 
-/*
-template <typename ArgType>
-TJObjectRef TJObjectRef::createObject(const std::string& className, const std::string& constrSignature, ArgType arg)
-{
-	// check types on runtime
-	TJ_STATIC_ASSERT(TJTypeTraits<ArgType>::sApplicableArg, "Invalid argument type");
-	return createObjectVarArgs(className.c_str(), constrSignature.c_str(), arg);
-}
-
-template <typename ArgType1, typename ArgType2>
-TJObjectRef TJObjectRef::createObject(const std::string& className, const std::string& constrSignature, ArgType1 arg1, ArgType2 arg2)
-{
-	// check types on runtime
-	TJ_STATIC_ASSERT(TJTypeTraits<ArgType1>::sApplicableArg, "Invalid argument type 1");
-	TJ_STATIC_ASSERT(TJTypeTraits<ArgType2>::sApplicableArg, "Invalid argument type 2");
-
-	return createObjectVarArgs(className.c_str(), constrSignature.c_str(), arg1, arg2);
-}
-
-template <typename ArgType1, typename ArgType2, typename ArgType3>
-TJObjectRef TJObjectRef::createObject(const std::string& className, const std::string& constrSignature, ArgType1 arg1, ArgType2 arg2, ArgType3 arg3)
-{
-	// check types on runtime
-	TJ_STATIC_ASSERT(TJTypeTraits<ArgType1>::sApplicableArg, "Invalid argument type 1");
-	TJ_STATIC_ASSERT(TJTypeTraits<ArgType2>::sApplicableArg, "Invalid argument type 2");
-	TJ_STATIC_ASSERT(TJTypeTraits<ArgType3>::sApplicableArg, "Invalid argument type 3");
-
-	return createObjectVarArgs(className.c_str(), constrSignature.c_str(), arg1, arg2, arg3);
-}
-
-template <typename ArgType1, typename ArgType2, typename ArgType3, typename ArgType4>
-TJObjectRef TJObjectRef::createObject(const std::string& className, const std::string& constrSignature, 
-									ArgType1 arg1, ArgType2 arg2, ArgType3 arg3, ArgType4 arg4)
-{
-	// check types on runtime
-	TJ_STATIC_ASSERT(TJTypeTraits<ArgType1>::sApplicableArg, "Invalid argument type 1");
-	TJ_STATIC_ASSERT(TJTypeTraits<ArgType2>::sApplicableArg, "Invalid argument type 2");
-	TJ_STATIC_ASSERT(TJTypeTraits<ArgType3>::sApplicableArg, "Invalid argument type 3");
-	TJ_STATIC_ASSERT(TJTypeTraits<ArgType4>::sApplicableArg, "Invalid argument type 4");
-
-	return createObjectVarArgs(className.c_str(), constrSignature.c_str(), arg1, arg2, arg3, arg4);
-}
-*/
-
 template <typename RetType>
 RetType TJObjectRef::callVarArgs(const char* methodName, const char* signature, ...)
 {
@@ -256,27 +176,6 @@ RetType TJObjectRef::callInternal(const std::string& methodName, const std::stri
 	addedArgs.push_back(TJValue(singleArgument));
 	return callInternal(methodName, signature, addedArgs, args...);
 }
-
-/*
-
-template <typename RetType, typename ArgType>
-RetType TJObjectRef::call(const std::string& methodName, const std::string& signature, ArgType arg)
-{
-	TJ_STATIC_ASSERT(TJTypeTraits<ArgType>::sApplicableArg, "Invalid argument type 1");
-	
-	return callVarArgs<RetType>(methodName.c_str(), signature.c_str(), arg);
-}
-
-template <typename RetType, typename ArgType1, typename ArgType2>
-RetType TJObjectRef::call(const std::string& methodName, const std::string& signature, ArgType1 arg1, ArgType2 arg2)
-{
-	TJ_STATIC_ASSERT(TJTypeTraits<ArgType1>::sApplicableArg, "Invalid argument type 1");
-	TJ_STATIC_ASSERT(TJTypeTraits<ArgType2>::sApplicableArg, "Invalid argument type 2");
-	
-	return callVarArgs(methodName.c_str(), signature.c_str(), arg1, arg2);
-}
-
-*/
 
 template <typename PrimitiveType>
 PrimitiveType TJObjectRef::field(const std::string& name)

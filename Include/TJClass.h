@@ -48,18 +48,6 @@ public:
 	template <typename RetType, typename ArgType, typename... JavaTypes>
 	RetType callInternal(const std::string& methodName, const std::string& signature, TJValueVector& addedArgs, ArgType value, JavaTypes... futureArgs);
 
-/*	
-	template <typename RetType, typename JavaType1>
-	RetType call(const std::string& methodName, const std::string& signature, JavaType1 arg1);
-
-	template <typename RetType, typename JavaType1, typename JavaType2>
-	RetType call(const std::string& methodName, const std::string& signature, JavaType1 arg1, JavaType2 arg2);
-
-	template <typename RetType, typename JavaType1, typename JavaType2, typename JavaType3>
-	RetType call(const std::string& methodName, const std::string& signature, JavaType1 arg1, JavaType2 arg2, JavaType3 arg3);
-*/
-
-
 	template <typename RetType>
 	RetType call(const std::string& methodName, const TJValue* args, size_t count);
 
@@ -102,11 +90,11 @@ void TJClassRef::setField(const std::string& fieldName, JavaType value)
 {
 	// get JNI environment
 	JNIEnv* environment = TJGetEnvironment();
-	if (environment == NULL)
+	if (environment == nullptr)
 		throw TJNIException(kThreadDetached, "Failed to get jnienv in TJClassRef::setField");
 
 	jfieldID fieldDescriptor = environment->GetStaticFieldID(mHandle, fieldName.c_str(), TJTypeTraits<JavaType>::sFieldSignature.c_str());
-	if (fieldDescriptor == NULL)
+	if (fieldDescriptor == nullptr)
 		GenerateJavaException(environment, environment->ExceptionOccurred(), "GetStaticFieldID failed in TJClassRef::setField");
 
 	// finally set value : no error checking - all values are already checked
@@ -137,37 +125,6 @@ RetType TJClassRef::call(const std::string& methodName, const std::string& signa
 	return callVarArgs<RetType>(methodName.c_str(), signature.c_str());
 }
 
-/*
-
-template <typename RetType, typename JavaType1>
-RetType TJClassRef::call(const std::string& methodName, const std::string& signature, JavaType1 arg1)
-{	
-	TJ_STATIC_ASSERT(TJTypeTraits<JavaType1>::sApplicableArg, "Invalid argument type 1");
-	
-	return callVarArgs<RetType>(methodName.c_str(), signature.c_str(), arg1);
-}
-
-template <typename RetType, typename JavaType1, typename JavaType2>
-RetType TJClassRef::call(const std::string& methodName, const std::string& signature, JavaType1 arg1, JavaType2 arg2)
-{
-	TJ_STATIC_ASSERT(TJTypeTraits<JavaType1>::sApplicableArg, "Invalid argument type 1");
-	TJ_STATIC_ASSERT(TJTypeTraits<JavaType2>::sApplicableArg, "Invalid argument type 2");
-
-	return callVarArgs<RetType>(methodName.c_str(), signature.c_str(), arg1, arg2);
-}
-
-template <typename RetType, typename JavaType1, typename JavaType2, typename JavaType3>
-RetType TJClassRef::call(const std::string& methodName, const std::string& signature, JavaType1 arg1, JavaType2 arg2, JavaType3 arg3)
-{
-	TJ_STATIC_ASSERT(TJTypeTraits<JavaType1>::sApplicableArg, "Invalid argument type 1");
-	TJ_STATIC_ASSERT(TJTypeTraits<JavaType2>::sApplicableArg, "Invalid argument type 2");
-	TJ_STATIC_ASSERT(TJTypeTraits<JavaType3>::sApplicableArg, "Invalid argument type 3");
-
-	return callVarArgs<RetType>(methodName.c_str(), signature.c_str(), arg1, arg2, arg3);
-}
-
-*/
-
 template <typename RetType, typename... JavaTypes>
 RetType TJClassRef::call(const std::string& methodName, const std::string& signature, JavaTypes... args)
 {
@@ -192,15 +149,20 @@ RetType TJClassRef::callInternal(const std::string& methodName, const std::strin
 template <typename RetType>
 RetType TJClassRef::call(const std::string& methodName, const TJValue* args, size_t count)
 {
+	static const uint32_t sMaxArgs = 1024;
+
 	if ((args == NULL) || (count == 0))
 		throw TJInvalidArgument("Invalid argument in TJClassRef::call");
+
+	if (count > sMaxArgs)
+		throw TJInvalidArgument("Exceeded maximum count of arguments ");
 
 	JNIEnv* environment = TJGetEnvironment();
 	if (environment == NULL)
 		throw TJNIException(kThreadDetached, "Failed to get jnienv in TJClassRef::call");
 
 	std::string signature = "";
-	jvalue rawArgs[1024] = {0};
+	jvalue rawArgs[sMaxArgs] = {0};
 
 	for (size_t i = 0; i < count; ++i)
 	{

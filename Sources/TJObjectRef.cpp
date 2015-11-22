@@ -53,18 +53,21 @@ TJObjectRef::TJObjectRef(TJObjectRef&& rht):
 	TJRef<jobject>(std::move(rht)),
 	mClassRef(rht.mClassRef)
 {
+	rht.mClassRef = nullptr;
 }
 
 TJObjectRef& TJObjectRef::operator=(TJObjectRef&& rht)
 {
 	TJRef<jobject>::operator=(std::move(rht));
-	mClassRef = std::move(rht.mClassRef);
+	mClassRef = rht.mClassRef;
+	rht.mClassRef = nullptr;
 	return *this;
 }
 
 TJObjectRef::~TJObjectRef() noexcept
 {
-	delete mClassRef;
+	if (mClassRef != nullptr)
+		delete mClassRef;
 }
 
 TJObjectRef TJObjectRef::createObjectVarArgs(const char* className, const char* constrSignature, ...)
