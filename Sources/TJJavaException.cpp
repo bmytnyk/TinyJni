@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2012
+* Copyright (c) 2015
 * Bogdan Mytnyk <bogdan.mytnyk@gmail.com>
 *
 * This library is free software; you can redistribute it and/or modify
@@ -43,6 +43,11 @@ TJJavaOutOfMemory::TJJavaOutOfMemory(const std::string& fullDescription, const s
 }
 
 TJArrayIndexOutOfBounds::TJArrayIndexOutOfBounds(const std::string& fullDescription, const std::string& place) throw():
+	TJJavaException(fullDescription, place)
+{
+}
+
+TJJavaInvalidArgument::TJJavaInvalidArgument(const std::string& fullDescription, const std::string& place) throw():
 	TJJavaException(fullDescription, place)
 {
 }

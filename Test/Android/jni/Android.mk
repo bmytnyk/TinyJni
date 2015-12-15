@@ -4,7 +4,7 @@ GPA_ES_VERSION = GLES11
 GPA_BUILD_OPTIMIZATION = debug
 GPA_API_LEVEL = android-9
 
-LOCAL_PATH 	:= ../Sources
+LOCAL_PATH 	:= ../Src
 MY_PATH = $(LOCAL_PATH)
 include $(CLEAR_VARS)
 
@@ -12,17 +12,10 @@ LOCAL_CPPFLAGS  := $(GPA_BUILD_FLAGS)
 
 LOCAL_MODULE    := TinyJni
 LOCAL_PATH 	:= $(MY_PATH)
-LOCAL_C_INCLUDES = ../Include
+LOCAL_C_INCLUDES = ../../Include
 
-LOCAL_SRC_FILES := TJClass.cpp \
-				   TJString.cpp \
-				   TJCommon.cpp \
-				   TJException.cpp \
-				   TJJavaException.cpp \
-				   TJObjectRef.cpp \
-				   TJPrimitiveArray.cpp \
-				   TJTypeTraits.cpp \
-				   TJValue.cpp
+LOCAL_SRC_FILES := TJStringTest.cpp \
+				   TJThreadTest.cpp
 				 
 
 include $(BUILD_SHARED_LIBRARY)

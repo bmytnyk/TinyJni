@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2012
+* Copyright (c) 2015
 * Bogdan Mytnyk <bogdan.mytnyk@gmail.com>
 *
 * This library is free software; you can redistribute it and/or modify

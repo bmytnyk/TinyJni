@@ -6,9 +6,6 @@
 #include "../../TinyJni/Include/TJObjectRef.h"
 #include "../../TinyJni/Include/TJString.h"
 
-#include "../Include/TJClassTest.h"
-#include "../Include/TJStringTest.h"
-
 #include <iostream>
 #include <limits>
 #include <array>

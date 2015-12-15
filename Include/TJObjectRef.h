@@ -160,15 +160,15 @@ RetType TJObjectRef::call(const std::string& methodName, const std::string& sign
 template <typename RetType, typename... JavaTypes>
 RetType TJObjectRef::call(const std::string& methodName, const std::string& signature, JavaTypes... args)
 {
-	return call(methodName, signature, args...)
+	return call(methodName, signature, args...);
 }
-
+/*
 template <typename RetType>
 RetType TJObjectRef::callInternal(const std::string& methodName, const std::string& signature, const TJValueVector& args)
 {
 	return call(methodName, args.data(), args.size());
 }
-
+*/
 template <typename RetType, typename ArgType, typename... JavaTypes>
 RetType TJObjectRef::callInternal(const std::string& methodName, const std::string& signature, TJValueVector& addedArgs, ArgType singleArgument, JavaTypes... args)
 {

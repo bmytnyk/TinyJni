@@ -18,11 +18,11 @@ private:
 void TestAttachedThreadFunc()
 {
 	JNIEnv* env = TJAttachCurrentThreadToJNI(nullptr);
-	EXPECT_NE(env, nullptr);
-	EXPECT_EQ(env, TJGetEnvironment());
+	ASSERT_NE(env, nullptr);
+	ASSERT_EQ(env, TJGetEnvironment());
 
 	TJDetachCurrentThreadFromJni();
-	EXPECT_EQ(nullptr, TJGetEnvironment());
+	ASSERT_EQ(nullptr, TJGetEnvironment());
 }
 
 TEST(TJThreadTest, TestAttachThread)
@@ -35,8 +35,8 @@ void TestNotAttachedThreadFunc()
 {
 	TJInt error = 0;
 	JNIEnv* pEnv = TJGetEnvironment(&error);
-	EXPECT_EQ(pEnv, nullptr);
-	EXPECT_EQ(error, kThreadDetached);
+	ASSERT_EQ(pEnv, nullptr);
+	ASSERT_EQ(error, kThreadDetached);
 }
 
 TEST(TJThreadTest, TestNotAttachedThread)

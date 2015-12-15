@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2012
+* Copyright (c) 2015
 * Bogdan Mytnyk <bogdan.mytnyk@gmail.com>
 *
 * This library is free software; you can redistribute it and/or modify
@@ -158,6 +158,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved)
 	assert(vm != NULL);
 	sJavaVM = vm;
 	return sCreatedVersion;
+
 }
 
 JNIEXPORT void JNICALL JNI_OnUnload(JavaVM* vm, void* reserved)
@@ -205,7 +206,13 @@ JNIEnv* TJAttachCurrentThreadToJNI(TJInt* pError)
 		return nullptr;
 	}
 
-	TJInt res = sJavaVM->AttachCurrentThread(reinterpret_cast<void**>(&env), NULL);
+#ifdef _WIN32
+	void** pEnvironment = reinterpret_cast<void**>(&env);
+#else
+	JNIEnv** pEnvironment = &env;
+#endif
+
+	TJInt res = sJavaVM->AttachCurrentThread(pEnvironment, NULL);
 	if (pError != nullptr)
 		*pError = res;
 	return env;

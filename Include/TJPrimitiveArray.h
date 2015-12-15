@@ -72,6 +72,20 @@ private:
 
 public:
 
+	TJJavaPrimitiveArray(TJJavaPrimitiveArray&& rht) :
+		TJBase(std::move(rht)),
+		mCount(rht.mCount),
+		mAcquiredDataPtr(rht.mAcquiredDataPtr)
+	{
+		rht.mAcquiredDataPtr = nullptr;
+	}
+
+	TJJavaPrimitiveArray& operator=(TJJavaPrimitiveArray&& rht) 
+	{
+		// TO IMPLEMENT
+		return *this;
+	}
+
 	~TJJavaPrimitiveArray() noexcept
 	{
 		releasePtr();
@@ -155,7 +169,7 @@ void TJJavaPrimitiveArray<T>::releasePtr() noexcept
 template <typename T>
 TJJavaPrimitiveArray<T> TJJavaPrimitiveArray<T>::CreateArray(TJSize size, TJRefType refType)
 {
-	if (size == 0)
+	if (size <= 0)
 		throw TJInvalidArgument("Invalid size in TJJavaPrimitiveArray<T>::CreateArray");
 
 	JNIEnv* jniEnv = TJGetEnvironment();
@@ -218,8 +232,6 @@ typedef TJJavaPrimitiveArray<TJInt> TJJavaIntArray;
 typedef TJJavaPrimitiveArray<TJChar> TJJavaCharArray;
 typedef TJJavaPrimitiveArray<TJLong> TJJavaLongArray;
 typedef TJJavaPrimitiveArray<TJBoolean> TJJavaBooleanArray;
-
-template class TJJavaPrimitiveArray<TJShort>;
 
 
 #endif //__TJPRIMITIVEARRAY_H__
