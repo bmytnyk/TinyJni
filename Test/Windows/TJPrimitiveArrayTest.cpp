@@ -82,13 +82,26 @@ TYPED_TEST(TJPrimitiveArrayTest, IncorrectRegionAccess)
 	EXPECT_THROW(testedArray.getRegion(0, regionSize, regionCorrect), TJInvalidArgument);
 }
 
-TYPED_TEST(TJPrimitiveArrayTest, TestMove)
+TYPED_TEST(TJPrimitiveArrayTest, TestMoveConstructor)
 {
 	TJJavaPrimitiveArray<TypeParam>  testedArray = TJJavaPrimitiveArray<TypeParam>::CreateArray(1024, kLocalRef);
 	auto handle = testedArray.get();
 	TJJavaPrimitiveArray<TypeParam> movedArray(std::move(testedArray));
 
 	EXPECT_EQ(nullptr, testedArray.get()) << "After move handle must be zero";
-	/*EXPECT_EQ(handle, movedArray.get());
-	EXPECT_EQ(nullptr, testedArray.getPtr()) << "After move handle must be zero";*/
+	EXPECT_EQ(handle, movedArray.get());
+	EXPECT_THROW(testedArray.getPtr(), TJNIException);
+}
+
+TYPED_TEST(TJPrimitiveArrayTest, TestMoveAssignment)
+{
+	TJJavaPrimitiveArray<TypeParam>  testedArray = TJJavaPrimitiveArray<TypeParam>::CreateArray(1024, kLocalRef);
+	auto handle = testedArray.get();
+	TJJavaPrimitiveArray<TypeParam> movedArray = TJJavaPrimitiveArray<TypeParam>::CreateArray(1024, kLocalRef);
+	TypeParam* ptr = movedArray.getPtr();
+	movedArray = std::move(testedArray);
+
+	EXPECT_EQ(nullptr, testedArray.get()) << "After move handle must be zero";
+	EXPECT_EQ(handle, movedArray.get());
+	EXPECT_THROW(testedArray.getPtr(), TJNIException);
 }

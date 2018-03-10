@@ -19,9 +19,9 @@
 #define TJ_JAVA_ARRAY_TRAITS_DEF(type)																						\
 	TJJavaArrayTraits<TJ##type>::ArrayType TJJavaArrayTraits<TJ##type>::create(JNIEnv* environment, TJSize count)			\
 	{																														\
-		TJ_ASSERT(environment != NULL);																						\
+		TJ_ASSERT(environment != nullptr);																						\
 		TJJavaArrayTraits<TJ##type>::ArrayType resArray = environment->New##type##Array(count);								\
-		if (resArray == NULL)																								\
+		if (resArray == nullptr)																								\
 			GenerateJavaException(environment, environment->ExceptionOccurred(), "Creating array failed");					\
 		return resArray;																									\
 	}																														\
@@ -29,8 +29,8 @@
 	void TJJavaArrayTraits<TJ##type>::getRegion(JNIEnv* env, TJJavaArrayTraits<TJ##type>::ArrayType array,					\
 		TJSize start, TJSize len, TJJavaArrayTraits<TJ##type>::NativeType *buf)												\
 	{																														\
-		TJ_ASSERT(buf != NULL);																								\
-		TJ_ASSERT(env != NULL);																								\
+		TJ_ASSERT(buf != nullptr);																								\
+		TJ_ASSERT(env != nullptr);																								\
 																															\
 		env->Get##type##ArrayRegion(array, start, len, buf);																\
 		if (jthrowable error = env->ExceptionOccurred())																						\

@@ -117,34 +117,3 @@ bool TestClassMethods()
 
 	return succeeded;
 }
-
-bool TestPrimitiveArray()
-{
-	const size_t kSizeToTest = 1024;
-	TJJavaPrimitiveArray<TJInt> sampleArray = TJJavaPrimitiveArray<TJInt>::CreateArray(kSizeToTest, kGlobalRef);
-
-	TJInt* rawArray = sampleArray.getPtr();
-	if (rawArray == nullptr)
-	{
-		std::cout << "Failed to get raw array pointer\n" << std::endl;
-		return false;
-	}
-
-	for (size_t i = 0; i < kSizeToTest; ++i)
-		rawArray[i] = static_cast<TJInt>(i);
-
-	TJInt regionCorrect[16] = {0};
-	sampleArray.getRegion(0, 16, regionCorrect);
-
-	if (regionCorrect[8] != 8)
-	{
-		std::cout << "Failed to get correct region" << std::endl;
-		return false;
-	}
-
-	rawArray = sampleArray.getPtr();
-	if (rawArray[0] != 0xFFFFFFFF)
-		return false;
-	
-	return true;
-}
