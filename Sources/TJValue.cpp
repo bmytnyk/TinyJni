@@ -16,8 +16,8 @@
 
 
 TJValue::TJValue(const TJValue& rht):
-	mTypeId(rht.mTypeId),
-	mJavaValue(rht.mJavaValue)
+	mJavaValue(rht.mJavaValue),
+    mTypeId(rht.mTypeId)
 {
 }
 

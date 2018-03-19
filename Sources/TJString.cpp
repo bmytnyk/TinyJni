@@ -69,19 +69,19 @@ TJStringRef::TJStringRef(jstring str, bool copy, TJRefType ref):
 
 TJStringRef::TJStringRef(const TJStringRef& rht):
 	TJStringRef::Base(rht),
-	mUtf8Length(rht.mUtf8Length),
-	mUtf16Length(rht.mUtf16Length),
 	mUtf8Chars(nullptr),
-	mUtf16Chars(nullptr)
+    mUtf8Length(rht.mUtf8Length),
+	mUtf16Chars(nullptr),
+    mUtf16Length(rht.mUtf16Length)
 {
 }
 
 TJStringRef::TJStringRef(TJStringRef&& rht):
 	Base(std::move(rht)),
-	mUtf8Length(rht.mUtf8Length),
-	mUtf16Length(rht.mUtf16Length),
 	mUtf8Chars(rht.mUtf8Chars),
-	mUtf16Chars(rht.mUtf16Chars)
+    mUtf8Length(rht.mUtf8Length),
+	mUtf16Chars(rht.mUtf16Chars),
+    mUtf16Length(rht.mUtf16Length)
 {
 	rht.mUtf8Length = 0;
 	rht.mUtf16Length = 0;

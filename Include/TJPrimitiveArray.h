@@ -123,7 +123,7 @@ private:
 	void* _getCriticalRow() const
 	{
 		JNIEnv* environment = TJGetEnvironment();
-		if ((environment != nullptr) && (mHandle != nullptr))
+		if ((environment != nullptr) && (this->mHandle != nullptr))
 			return environment->GetPrimitiveArrayCritical(this->mHandle, NULL);
 		return nullptr;
 	}
@@ -144,7 +144,7 @@ T* TJJavaPrimitiveArray<T>::getPtr()
 	if (environment == nullptr)
 		throw TJNIException(kThreadDetached, "Failed to get jnienv in TJJavaPrimitiveArray::getPtr");
 
-	if (mHandle == nullptr)
+	if (this->mHandle == nullptr)
 		throw TJNIException(kInvalidHandle, "Invalid handle in TJJavaPrimitiveArray");
 
 	if (mAcquiredDataPtr != nullptr)
@@ -160,7 +160,7 @@ const T* TJJavaPrimitiveArray<T>::getPtr() const
 	if (environment == NULL)
 		throw TJNIException(kThreadDetached, "Failed to get jnienv in TJJavaPrimitiveArray::getPtr");
 
-	if (mHandle == nullptr)
+	if (this->mHandle == nullptr)
 		throw TJNIException(kInvalidHandle, "Invalid handle in TJJavaPrimitiveArray");
 
 	if (mAcquiredDataPtr != NULL)
@@ -173,9 +173,9 @@ template <typename T>
 void TJJavaPrimitiveArray<T>::releasePtr() noexcept
 {
 	JNIEnv* environment = TJGetEnvironment();
-	if ((environment != nullptr) && (mAcquiredDataPtr != nullptr) && (mHandle != nullptr))
+	if ((environment != nullptr) && (mAcquiredDataPtr != nullptr) && (this->mHandle != nullptr))
 	{
-		TJJavaArrayTraits<T>::releaseElements(environment, mHandle, mAcquiredDataPtr);
+		TJJavaArrayTraits<T>::releaseElements(environment, this->mHandle, mAcquiredDataPtr);
 		mAcquiredDataPtr = nullptr;
 	}
 }
@@ -206,7 +206,7 @@ void TJJavaPrimitiveArray<T>::getRegion(TJSize startIdx, TJSize length, T* resul
 	if (jniEnv == NULL)
 		throw TJNIException(kThreadDetached, "Failed to get jni environment in TJJavaPrimitiveArray::getRegion");
 
-	if (mHandle == nullptr)
+	if (this->mHandle == nullptr)
 		throw TJNIException(kInvalidHandle, "Invalid handle in TJJavaPrimitiveArray");
 
 	if (mAcquiredDataPtr != nullptr)
@@ -225,7 +225,7 @@ void TJJavaPrimitiveArray<T>::setRegion(TJSize startIdx, TJSize length, const T*
 	if ((startIdx + length > static_cast<TJSize>(mCount)) || (startIdx < 0) || (sourceBuffer == nullptr) || (length < 0))
 		throw TJInvalidArgument("Invalid argument in TJJavaPrimitiveArray::setRegion");
 
-	if (mHandle == nullptr)
+	if (this->mHandle == nullptr)
 		throw TJNIException(kInvalidHandle, "Invalid handle in TJJavaPrimitiveArray");
 
 	JNIEnv* jniEnv = TJGetEnvironment();

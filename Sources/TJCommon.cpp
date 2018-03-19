@@ -16,15 +16,12 @@
 #include <cassert>
 #include <stdexcept>
 
-#ifdef _WIN32
+#if TJ_OS == TJ_OS_WINDOWS
 #include "windows.h"
 HINSTANCE sVMLibrary = NULL;
-#elif defined (TJ_ANDROID)
-#include <dlfcn.h>
-
-void* sVMLibrary = NULL;
 #else
-// Another platform implementation
+#include <dlfcn.h>
+void* sVMLibrary = NULL;
 #endif
 
 namespace
@@ -47,7 +44,7 @@ JNIEnv* TJCreateJavaVm(const std::string& libPath, TJJNIVersion version, const T
 	if (sJavaVM != nullptr)
 		return TJGetEnvironment();
 
-#ifdef _WIN32
+#if TJ_OS == TJ_OS_WINDOWS
 	sVMLibrary = ::LoadLibraryA(libPath.c_str());
 	if (sVMLibrary == nullptr)
 		return nullptr;
@@ -98,6 +95,14 @@ JNIEnv* TJCreateJavaVm(const std::string& libPath, TJJNIVersion version, const T
 		sVMLibrary = NULL;
 		return NULL;
 	}
+    
+    sGetCreatedJavaVMsPtr = reinterpret_cast<JNI_GetCreatedJavaVMsPtr>(dlsym(sVMLibrary, "JNI_GetCreatedJavaVMs"));
+    if (sGetCreatedJavaVMsPtr == NULL)
+    {
+        dlclose(sVMLibrary);
+        sVMLibrary = NULL;
+        return NULL;
+    }
 
 #endif
 
@@ -139,7 +144,7 @@ void TJDestroyJavaVM() noexcept
 		if (sJavaVM != nullptr)
 			sJavaVM->DestroyJavaVM();
 
-#ifdef _WIN32
+#if TJ_OS == TJ_OS_WINDOWS
 		// unloads library
 		::FreeLibrary(sVMLibrary);
 #else
@@ -206,7 +211,7 @@ JNIEnv* TJAttachCurrentThreadToJNI(TJInt* pError)
 		return nullptr;
 	}
 
-#ifdef _WIN32
+#if TJ_OS != TJ_OS_ANDROID
 	void** pEnvironment = reinterpret_cast<void**>(&env);
 #else
 	JNIEnv** pEnvironment = &env;

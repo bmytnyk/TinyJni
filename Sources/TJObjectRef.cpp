@@ -113,7 +113,7 @@ TJObjectRef TJObjectRef::createObjectFromTJValues(const std::string& className, 
 		throw TJInvalidArgument("Invalid parameters in TJObjectRef::createObject");
 
 	// create array of jvalue
-	jvalue args[sMaxArgsCount] = {0};
+	jvalue args[sMaxArgsCount];
 	for (size_t i = 0; i < count; ++i)
 		args[i] = values[i].handle();
 

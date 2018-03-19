@@ -161,8 +161,8 @@ RetType TJClassRef::call(const std::string& methodName, const TJValue* args, siz
 	if (environment == NULL)
 		throw TJNIException(kThreadDetached, "Failed to get jnienv in TJClassRef::call");
 
-	std::string signature = "";
-	jvalue rawArgs[sMaxArgs] = {0};
+	std::string signature;
+	jvalue rawArgs[sMaxArgs];
 
 	for (size_t i = 0; i < count; ++i)
 	{

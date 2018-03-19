@@ -17,13 +17,18 @@
 
 // defines for different operating systems
 
-#define TJ_OS_WINDOWS 0
-#define TJ_OS_LINUX 1
-#define TJ_OS_ANDROID 2
-#define TJ_OS_MACOSX 3
+#define TJ_OS_WINDOWS   0
+#define TJ_OS_LINUX     1
+#define TJ_OS_ANDROID   2
+#define TJ_OS_MACOSX    3
 
 #ifdef _WIN32
+#define TJ_OS TJ_OS_WINDOWS
 #define TJ_THREAD_SPECIFIC _declspec(thread)
+#elif defined(__APPLE__)
+#define TJ_OS TJ_OS_MACOSX
+#elif deinfed(__ANDROID__)
+#define TJ_OS TJ_OS_ANDROID
 #else
 // do for other platforms
 #endif
@@ -91,7 +96,7 @@ TJInt TJDetachCurrentThreadFromJni();
 
 #define TJ_ASSERT(arg) assert(arg)
 
-#define TJ_UNREFERENCED_PARAMETER(arg) arg
+#define TJ_UNREFERENCED_PARAMETER(arg) (void)arg
 
 #ifndef TJ_STATIC_ASSERT
 #define TJ_STATIC_ASSERT(condition, message) static_assert(condition, message)
