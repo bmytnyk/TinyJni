@@ -14,7 +14,8 @@ set (CMAKE_CXX_STANDARD 11)
 
 include_directories(Include ${JNI_DIRS})
 
-#add_subdirectory(Test)
+
+add_subdirectory(Test)
 
 file(GLOB CPP_SOURCES Sources/*.cpp)
 

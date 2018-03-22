@@ -1,5 +1,7 @@
-#ifdef _WIN32
 #include "TJJavaVMInitializer.h"
+
+#if TJ_OS == TJ_OS_WINDOWS
+#include <filesystem>
 #endif
 
 #include "../../TinyJni/Include/TJCommon.h"
@@ -10,15 +12,11 @@
 
 #include "gtest/gtest.h"
 
-#include <filesystem>
-
 int main(int argc, char* argv[])
 {
-#ifdef _WIN32
 	TJStringArray options;
 	options.push_back("-verbose:jni");
 	TJJavaVMInitializer sVmInitializer(kJniChooseLatest, options);
-#endif
 
 	try
 	{

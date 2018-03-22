@@ -78,8 +78,11 @@ JNIEnv* TJCreateJavaVm(const std::string& libPath, TJJNIVersion version, const T
 
 	sVMLibrary = dlopen(libPath.c_str(), RTLD_NOW);
 	if (sVMLibrary == NULL)
+    {
+        const char* error  = dlerror();
 		return NULL;
-	
+    }
+
 	pCreateFunc = reinterpret_cast<JNI_CreateJavaVMPtr>(dlsym(sVMLibrary, "JNI_CreateJavaVM"));
 	if (pCreateFunc == NULL)
 	{
@@ -125,13 +128,15 @@ JNIEnv* TJCreateJavaVm(const std::string& libPath, TJJNIVersion version, const T
 		vm_args.options = &optionsArray[0];
 		vm_args.ignoreUnrecognized = JNI_TRUE;
 	}
+    
 
 	/* Get the default initialization arguments and set the class  path */ 
-    //pGetDefaultArgFunc(&vm_args); 
+    // pGetDefaultArgFunc(&vm_args);
  
     /* load and initialize a Java VM, return a JNI interface  pointer in env */ 
     JNIEnv* env = NULL;
 	pCreateFunc(&sJavaVM, reinterpret_cast<void**>(&env), &vm_args);
+    //JNI_CreateJavaVM(&sJavaVM, reinterpret_cast<void**>(&env), &vm_args);
 	sCreatedVersion = version;
 
 	return env;

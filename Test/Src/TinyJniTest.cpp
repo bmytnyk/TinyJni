@@ -1,6 +1,9 @@
-#include <windows.h>
-
 #include "../../TinyJni/Include/TJCommon.h"
+
+#if TJ_OS == TJ_OS_WINDOWS
+#include <windows.h>
+#endif
+
 #include "../../TinyJni/Include/TJPrimitiveArray.h"
 #include "../../TinyJni/Include/TJClass.h"
 #include "../../TinyJni/Include/TJObjectRef.h"

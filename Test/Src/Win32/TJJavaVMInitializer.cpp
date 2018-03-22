@@ -1,3 +1,4 @@
+#ifdef _WIN32
 #include "windows.h"
 #include "shlwapi.h"
 
@@ -122,3 +123,4 @@ std::string TJJavaVMInitializer::GetJavaHomePathFromRegistry() const
 
 	return javaHomePath;
 }
+#endif
