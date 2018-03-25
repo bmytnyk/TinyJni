@@ -1,4 +1,3 @@
-#ifdef _WIN32
 #include "windows.h"
 #include "shlwapi.h"
 
@@ -6,16 +5,18 @@
 
 #include "TJJavaVMInitializer.h"
 
-#pragma comment(lib, "jvm.lib")
 #pragma comment(lib, "shlwapi.lib")
 
 TJJavaVMInitializer::TJJavaVMInitializer(TJJNIVersion prefferedVersion, const TJStringArray& options) :
 	mOptions(options),
 	mVersion(prefferedVersion)
 {
-	std::string jreFolderPath = GetJavaHomePathFromRegistry();
-	if (jreFolderPath.empty())
-		throw std::runtime_error("Java home path not found");
+	char buffer[1024];
+	DWORD charsCount = ::GetEnvironmentVariableA("JAVA_HOME", buffer, sizeof(buffer));
+	if (charsCount == 0)
+		throw std::runtime_error("Failed to get JAVA_HOME environment variable");
+	
+	std::string jreFolderPath(buffer, charsCount);
 
 	const char* const sClientPath = "\\jre\\bin\\client\\jvm.dll";
 	const char* const sServerPath = "\\jre\\bin\\server\\jvm.dll";
@@ -50,7 +51,7 @@ TJJavaVMInitializer::TJJavaVMInitializer(TJJNIVersion prefferedVersion, const TJ
 		throw std::runtime_error("Failed to load jvm.dll");
 }
 
-TJJavaVMInitializer::~TJJavaVMInitializer()
+TJJavaVMInitializer::~TJJavaVMInitializer() noexcept
 {
 	TJDestroyJavaVM();
 }
@@ -123,4 +124,4 @@ std::string TJJavaVMInitializer::GetJavaHomePathFromRegistry() const
 
 	return javaHomePath;
 }
-#endif
+
