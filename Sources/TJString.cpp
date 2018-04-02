@@ -6,7 +6,6 @@
 * it under the terms of the MIT license.
 */
 
-#include "../TJPch.h"
 #include "../Include/TJCommon.h"
 #include "../Include/TJString.h"
 #include "../Include/TJUtils.h"

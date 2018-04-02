@@ -6,8 +6,6 @@
 * it under the terms of the MIT license.
 */
 
-#include "../TJPch.h"
-
 #include "../Include/TJValue.h"
 
 #include "../Include/TJTypeTraits.h"
