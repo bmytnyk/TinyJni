@@ -5,10 +5,21 @@ file(GLOB CPP_SOURCES Src/*.cpp)
 
 file(GLOB HEADERS Include/*.h)
 
-set(JNI_DIRS $ENV{JAVA_HOME}/include)
+if (WIN32)
+	set(JAVA_HOME $ENV{JAVA_HOME})	
+
+else()
+	execute_process(COMMAND "/usr/libexec/java_home" OUTPUT_VARIABLE JAVA_HOME)
+
+	# strip trailing newline
+	string(REGEX REPLACE "\n$" "" JAVA_HOME "${JAVA_HOME}")
+endif(WIN32)
+
+
+set(JNI_DIRS ${JAVA_HOME}/include)
 
 if (WIN32)
-	set(JNI_DIRS ${JNI_DIRS} $ENV{JAVA_HOME}/include/win32)
+	set(JNI_DIRS ${JNI_DIRS} ${JAVA_HOME}/include/win32)
 	set(CPP_SOURCES ${CPP_SOURCES} Src/Win32/TJJavaVMInitializer.cpp)
 	if (MSVC)
 		SET( CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} /MTd" CACHE STRING "MSVC MT flags " FORCE)
@@ -17,7 +28,7 @@ if (WIN32)
 endif (WIN32)
 
 if (APPLE)
-	set(JNI_DIRS ${JNI_DIRS} $ENV{JAVA_HOME}/include/darwin)
+	set(JNI_DIRS ${JNI_DIRS} ${JAVA_HOME}/include/darwin)
 	set(CPP_SOURCES ${CPP_SOURCES} Src/MacOs/TJJavaVMInitializer.cpp)
 endif (APPLE)
 
