@@ -5,32 +5,41 @@ file(GLOB CPP_SOURCES Src/*.cpp)
 
 file(GLOB HEADERS Include/*.h)
 
-if (WIN32)
-	set(JAVA_HOME $ENV{JAVA_HOME})	
-
-else()
-	execute_process(COMMAND "/usr/libexec/java_home" OUTPUT_VARIABLE JAVA_HOME)
-
-	# strip trailing newline
-	string(REGEX REPLACE "\n$" "" JAVA_HOME "${JAVA_HOME}")
-endif(WIN32)
-
+set(LINK_LIBRARIES TinyJni gtest)
 
 set(JNI_DIRS ${JAVA_HOME}/include)
 
 if (WIN32)
-	set(JNI_DIRS ${JNI_DIRS} ${JAVA_HOME}/include/win32)
+
+	set(JNI_DIRS ${JAVA_HOME}/include ${JAVA_HOME}/include/win32)
+	
 	set(CPP_SOURCES ${CPP_SOURCES} Src/Win32/TJJavaVMInitializer.cpp)
+	
 	if (MSVC)
 		SET( CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} /MTd" CACHE STRING "MSVC MT flags " FORCE)
 		SET( CMAKE_CXX_FLAGS_RELEASE  "${CMAKE_CXX_FLAGS_RELEASE} /MT" CACHE STRING "MSVC MT flags " FORCE)
 	endif (MSVC)
-endif (WIN32)
+elseif (UNIX)
+	if (APPLE)
+		execute_process(COMMAND "/usr/libexec/java_home" OUTPUT_VARIABLE JAVA_HOME)
 
-if (APPLE)
-	set(JNI_DIRS ${JNI_DIRS} ${JAVA_HOME}/include/darwin)
-	set(CPP_SOURCES ${CPP_SOURCES} Src/MacOs/TJJavaVMInitializer.cpp)
-endif (APPLE)
+		# strip trailing newline
+		string(REGEX REPLACE "\n$" "" JAVA_HOME "${JAVA_HOME}")
+
+		set(JNI_DIRS ${JAVA_HOME}/include ${JAVA_HOME}/include/darwin)
+		
+		set(CPP_SOURCES ${CPP_SOURCES} Src/MacOs/TJJavaVMInitializer.cpp)
+	
+	else()
+		
+		set(JNI_DIRS ${JAVA_HOME}/include ${JAVA_HOME}/include/linux)
+		
+		set(CPP_SOURCES ${CPP_SOURCES} Src/Linux/TJJavaVMInitializer.cpp)
+		
+		set(LINK_LIBRARIES ${LINK_LIBRARIES} dl)
+	
+	endif (APPLE)
+endif(WIN32)
 
 include_directories(Include ${JNI_DIRS} gtest/googletest/include)
 
@@ -42,4 +51,4 @@ add_subdirectory(gtest)
 
 add_executable(TestTinyJni ${ALL_SOURCES})
 
-target_link_libraries(TestTinyJni TinyJni gtest)
+target_link_libraries(TestTinyJni ${LINK_LIBRARIES})

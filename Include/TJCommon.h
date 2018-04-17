@@ -27,10 +27,10 @@
 #define TJ_THREAD_SPECIFIC _declspec(thread)
 #elif defined(__APPLE__)
 #define TJ_OS TJ_OS_MACOSX
-#elif deinfed(__ANDROID__)
+#elif defined(__ANDROID__)
 #define TJ_OS TJ_OS_ANDROID
-#else
-// do for other platforms
+#elif defined(__linux__)
+#define TJ_OS TJ_OS_LINUX
 #endif
 
 enum TJJNIVersion

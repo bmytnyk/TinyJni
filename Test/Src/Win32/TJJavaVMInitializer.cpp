@@ -11,12 +11,7 @@ TJJavaVMInitializer::TJJavaVMInitializer(TJJNIVersion prefferedVersion, const TJ
 	mOptions(options),
 	mVersion(prefferedVersion)
 {
-	char buffer[1024];
-	DWORD charsCount = ::GetEnvironmentVariableA("JAVA_HOME", buffer, sizeof(buffer));
-	if (charsCount == 0)
-		throw std::runtime_error("Failed to get JAVA_HOME environment variable");
-	
-	std::string jreFolderPath(buffer, charsCount);
+	std::string jreFolderPath = GetJavaHomePath();
 
 	const char* const sClientPath = "\\jre\\bin\\client\\jvm.dll";
 	const char* const sServerPath = "\\jre\\bin\\server\\jvm.dll";
@@ -56,72 +51,13 @@ TJJavaVMInitializer::~TJJavaVMInitializer() noexcept
 	TJDestroyJavaVM();
 }
 
-std::string TJJavaVMInitializer::GetJavaHomePathFromRegistry() const
+std::string TJJavaVMInitializer::GetJavaHomePath() const
 {
-	std::string javaHomePath;
-	static std::array<const char*, 2> sPossibleJVMLocationRegPathes =
-	{
-		"SOFTWARE\\Wow6432Node\\JavaSoft\\Java Development Kit",
-		"SOFTWARE\\JavaSoft\\Java Development Kit"
-	};
+	char buffer[1024];
+	DWORD charsCount = ::GetEnvironmentVariableA("JAVA_HOME", buffer, sizeof(buffer));
+	if (charsCount == 0)
+		throw std::runtime_error("Failed to get JAVA_HOME environment variable");
 
-	bool pathFound = false;
-	for (auto it = sPossibleJVMLocationRegPathes.begin(); (it != sPossibleJVMLocationRegPathes.end()) && (!pathFound); ++it)
-	{
-		const char* regPath = *it;
-		HKEY regKey = NULL;
-		long error = ::RegOpenKeyA(HKEY_LOCAL_MACHINE, regPath, &regKey);
-		if (error != NO_ERROR)
-			continue;
-
-		// enumerate all subkeys
-		char name[64];
-		DWORD index = 0;
-
-		while (!pathFound && (error == NO_ERROR))
-		{
-			DWORD nameBytesCount = sizeof(name);
-			error = ::RegEnumKeyExA(regKey, index, name, &nameBytesCount, NULL, NULL, NULL, NULL);
-			if (error != NO_ERROR)
-				break;
-
-			++index;
-			HKEY subKey = NULL;
-
-			error = ::RegOpenKeyA(regKey, name, &subKey);
-			if (error != NO_ERROR)
-				continue;
-
-			char name[256];
-			char jniLibraryPath[1024];
-
-			bool keyFound = false;
-			while (!keyFound)
-			{
-				DWORD nameByteCount = sizeof(name);
-				DWORD jniLibraryPathCount = sizeof(jniLibraryPath);
-				LSTATUS result = ::RegEnumValueA(subKey, 0, name, &nameByteCount, NULL, NULL, reinterpret_cast<unsigned char*>(jniLibraryPath), &jniLibraryPathCount);
-				if (result == NO_ERROR)
-				{
-					static const char* sJavaPathKeyName = "JavaHome";
-					if (strcmp(name, sJavaPathKeyName) == 0)
-					{
-						javaHomePath.assign(jniLibraryPath);
-						keyFound = true;
-					}
-				}
-				else
-				{
-					break;
-				}
-			}
-
-			::RegCloseKey(subKey);
-		};
-
-		::RegCloseKey(regKey);
-	}
-
-	return javaHomePath;
+	return std::string(buffer, charsCount);
 }
 

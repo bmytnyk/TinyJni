@@ -6,7 +6,7 @@ TJJavaVMInitializer::TJJavaVMInitializer(TJJNIVersion prefferedVersion, const TJ
 	mOptions(options),
 	mVersion(prefferedVersion)
 {
-	std::string jreFolderPath = GetJavaHomePathFromRegistry();
+	std::string jreFolderPath = GetJavaHomePath();
 	if (jreFolderPath.empty())
 		throw std::runtime_error("Java home path not found");
 
@@ -40,7 +40,7 @@ TJJavaVMInitializer::~TJJavaVMInitializer() noexcept
 	TJDestroyJavaVM();
 }
 
-std::string TJJavaVMInitializer::GetJavaHomePathFromRegistry() const
+std::string TJJavaVMInitializer::GetJavaHomePath() const
 {
     std::shared_ptr<FILE> pipe(popen("/usr/libexec/java_home", "r"), pclose);
     if (!pipe.get())
