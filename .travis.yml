@@ -1,5 +1,6 @@
 language : cpp
 sudo : enabled
+dist : trusty
 os : linux
 before_install:
     - sudo add-apt-repository ppa:webupd8team/java
